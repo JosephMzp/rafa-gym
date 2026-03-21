@@ -16,8 +16,8 @@ export async function logoutUser() {
 }
 
 export async function getUserProfile(userId) {
-    // Check staff first
-    const { data: staffData } = await supabase
+    // Check staff first - staff.id IS the auth.users.id
+    const { data: staffData, error: staffError } = await supabase
         .from('staff')
         .select('*, roles(name)')
         .eq('id', userId)
@@ -36,8 +36,8 @@ export async function getUserProfile(userId) {
         }
     }
 
-    // Check clients
-    const { data: clientData } = await supabase
+    // Check clients - clients.user_id = auth.users.id
+    const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('*')
         .eq('user_id', userId)
@@ -55,7 +55,35 @@ export async function getUserProfile(userId) {
         }
     }
 
+    console.error('getUserProfile: No profile found for userId:', userId, 'Staff error:', staffError, 'Client error:', clientError)
     return null
+}
+
+// ============================================
+// STAFF
+// ============================================
+export async function getStaff() {
+    const { data, error } = await supabase.from('staff').select('*, roles(id, name)').order('name')
+    if (error) { console.error('getStaff error:', error); return [] }
+    return data || []
+}
+
+export async function getRoles() {
+    const { data, error } = await supabase.from('roles').select('*').order('name')
+    if (error) { console.error('getRoles error:', error); return [] }
+    return data || []
+}
+
+export async function updateStaff(id, updates) {
+    console.log('[updateStaff] Updating:', id, updates)
+    const { data, error, count } = await supabase
+        .from('staff')
+        .update(updates)
+        .eq('id', id)
+        .select('id, photo_url')
+    console.log('[updateStaff] Result:', { data, error, count })
+    if (error) throw error
+    return data
 }
 
 // ============================================
@@ -63,8 +91,8 @@ export async function getUserProfile(userId) {
 // ============================================
 export async function getLocations() {
     const { data, error } = await supabase.from('locations').select('*').order('name')
-    if (error) throw error
-    return data
+    if (error) { console.error('getLocations error:', error); return [] }
+    return data || []
 }
 
 // ============================================
@@ -72,8 +100,8 @@ export async function getLocations() {
 // ============================================
 export async function getMembershipTypes() {
     const { data, error } = await supabase.from('membership_types').select('*').order('price')
-    if (error) throw error
-    return data
+    if (error) { console.error('getMembershipTypes error:', error); return [] }
+    return data || []
 }
 
 // ============================================
@@ -91,9 +119,8 @@ export async function getClients() {
             )
         `)
         .order('name')
-    if (error) throw error
-    // Attach the active membership info to top level for convenience
-    return data.map(c => {
+    if (error) { console.error('getClients error:', error); return [] }
+    return (data || []).map(c => {
         const activeMembership = c.client_memberships?.find(m => m.status === 'active')
         return {
             ...c,
@@ -140,8 +167,8 @@ export async function getPayments() {
         .from('payments')
         .select('*, client:clients(id, name)')
         .order('date', { ascending: false })
-    if (error) throw error
-    return data.map(p => ({ ...p, client_name: p.client?.name || '' }))
+    if (error) { console.error('getPayments error:', error); return [] }
+    return (data || []).map(p => ({ ...p, client_name: p.client?.name || '' }))
 }
 
 export async function createPayment(paymentData) {
@@ -162,8 +189,8 @@ export async function getAttendances() {
             location:locations(id, name)
         `)
         .order('check_in', { ascending: false })
-    if (error) throw error
-    return data.map(a => ({
+    if (error) { console.error('getAttendances error:', error); return [] }
+    return (data || []).map(a => ({
         ...a,
         client_name: a.client?.name || '',
         location_name: a.location?.name || '',
@@ -187,8 +214,8 @@ export async function getGuests() {
         .from('guests')
         .select('*, host:clients!host_client_id(id, name), location:locations(id, name)')
         .order('visit_date', { ascending: false })
-    if (error) throw error
-    return data.map(g => ({
+    if (error) { console.error('getGuests error:', error); return [] }
+    return (data || []).map(g => ({
         ...g,
         host_name: g.host?.name || '',
         host_client_id: g.host?.id || g.host_client_id,
@@ -211,8 +238,8 @@ export async function getClasses() {
         .from('classes')
         .select('*, location:locations(id, name), class_enrollments(id)')
         .order('name')
-    if (error) throw error
-    return data.map(c => ({
+    if (error) { console.error('getClasses error:', error); return [] }
+    return (data || []).map(c => ({
         ...c,
         location_name: c.location?.name || '',
         enrolled: c.class_enrollments?.length || 0
@@ -233,8 +260,8 @@ export async function getRoutines() {
         .from('routines')
         .select('*, client:clients(id, name)')
         .order('created_at', { ascending: false })
-    if (error) throw error
-    return data.map(r => ({
+    if (error) { console.error('getRoutines error:', error); return [] }
+    return (data || []).map(r => ({
         ...r,
         client_name: r.client?.name || '',
         trainer: r.trainer_name
@@ -252,40 +279,50 @@ export async function createRoutine(routineData) {
 // ============================================
 export async function getExercises() {
     const { data, error } = await supabase.from('exercises').select('*').order('muscle_group, name')
-    if (error) throw error
-    return data
+    if (error) { console.error('getExercises error:', error); return [] }
+    return data || []
 }
 
 // ============================================
 // DASHBOARD STATS
 // ============================================
 export async function getDashboardStats() {
-    const [
-        { data: clients },
-        { data: activeClients },
-        { data: todayAttendances },
-        { data: payments },
-        { data: expiringSoon }
-    ] = await Promise.all([
-        supabase.from('clients').select('id', { count: 'exact' }),
-        supabase.from('clients').select('id', { count: 'exact' }).eq('status', 'active'),
-        supabase.from('attendances').select('id', { count: 'exact' }).gte('check_in', new Date().toISOString().split('T')[0]),
-        supabase.from('payments').select('amount, date, status'),
-        supabase.from('client_memberships').select('id, end_date, client:clients(name)').eq('status', 'active')
-            .lte('end_date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-    ])
+    try {
+        const [
+            { data: clients, error: e1 },
+            { data: activeClients, error: e2 },
+            { data: todayAttendances, error: e3 },
+            { data: payments, error: e4 },
+            { data: expiringSoon, error: e5 }
+        ] = await Promise.all([
+            supabase.from('clients').select('id', { count: 'exact' }),
+            supabase.from('clients').select('id', { count: 'exact' }).eq('status', 'active'),
+            supabase.from('attendances').select('id', { count: 'exact' }).gte('check_in', new Date().toISOString().split('T')[0]),
+            supabase.from('payments').select('amount, date, status'),
+            supabase.from('client_memberships').select('id, end_date, client:clients(name)').eq('status', 'active')
+                .lte('end_date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        ])
 
-    // Calculate monthly revenue
-    const thisMonth = new Date().toISOString().slice(0, 7)
-    const monthlyRevenue = payments
-        ?.filter(p => p.date?.startsWith(thisMonth) && p.status === 'paid')
-        .reduce((sum, p) => sum + Number(p.amount), 0) || 0
+        if (e1) console.error('Dashboard clients error:', e1)
+        if (e2) console.error('Dashboard activeClients error:', e2)
+        if (e3) console.error('Dashboard attendances error:', e3)
+        if (e4) console.error('Dashboard payments error:', e4)
+        if (e5) console.error('Dashboard expiring error:', e5)
 
-    return {
-        totalClients: clients?.length || 0,
-        activeClients: activeClients?.length || 0,
-        todayAttendances: todayAttendances?.length || 0,
-        monthlyRevenue,
-        expiringSoon: expiringSoon || []
+        const thisMonth = new Date().toISOString().slice(0, 7)
+        const monthlyRevenue = payments
+            ?.filter(p => p.date?.startsWith(thisMonth) && p.status === 'paid')
+            .reduce((sum, p) => sum + Number(p.amount), 0) || 0
+
+        return {
+            totalClients: clients?.length || 0,
+            activeClients: activeClients?.length || 0,
+            todayAttendances: todayAttendances?.length || 0,
+            monthlyRevenue,
+            expiringSoon: expiringSoon || []
+        }
+    } catch (err) {
+        console.error('getDashboardStats error:', err)
+        return { totalClients: 0, activeClients: 0, todayAttendances: 0, monthlyRevenue: 0, expiringSoon: [] }
     }
 }

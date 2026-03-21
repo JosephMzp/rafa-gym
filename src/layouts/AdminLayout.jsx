@@ -18,7 +18,8 @@ const menuItems = [
     { path: '/admin/guests', label: 'Invitados', icon: FiUserPlus },
     { path: '/admin/classes', label: 'Clases', icon: FiBookOpen },
     { path: '/admin/routines', label: 'Rutinas', icon: FiActivity },
-    { path: '/admin/reports', label: 'Reportes', icon: FiBarChart2 }
+    { path: '/admin/reports', label: 'Reportes', icon: FiBarChart2 },
+    { path: '/admin/staff', label: 'Empleados', icon: FiUser }
 ]
 
 export default function AdminLayout() {

@@ -9,44 +9,66 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        // Check existing session
-        const initAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession()
-                if (session?.user) {
-                    const profile = await getUserProfile(session.user.id)
-                    if (profile) {
-                        setUser(profile)
-                    }
-                }
-            } catch (err) {
-                console.error('Auth init error:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
+        let mounted = true
+        let initialDone = false
 
-        initAuth()
-
-        // Subscribe to auth changes
+        // Use onAuthStateChange as the SINGLE source of truth
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (event === 'SIGNED_IN' && session?.user) {
-                    const profile = await getUserProfile(session.user.id)
-                    if (profile) setUser(profile)
-                } else if (event === 'SIGNED_OUT') {
-                    setUser(null)
+                console.log('[Auth] Event:', event, session?.user?.email || 'no user')
+
+                if (session?.user) {
+                    // Use setTimeout to avoid Supabase deadlock during init
+                    setTimeout(async () => {
+                        try {
+                            const profile = await getUserProfile(session.user.id)
+                            console.log('[Auth] Profile result:', profile?.name || 'not found')
+                            if (mounted) {
+                                setUser(profile)
+                                setLoading(false)
+                            }
+                        } catch (err) {
+                            console.error('[Auth] Profile error:', err)
+                            if (mounted) {
+                                setUser(null)
+                                setLoading(false)
+                            }
+                        }
+                    }, 0)
+                } else {
+                    if (mounted) {
+                        setUser(null)
+                        setLoading(false)
+                    }
                 }
+
+                initialDone = true
             }
         )
 
-        return () => subscription?.unsubscribe()
+        // Safety timeout - if auth never resolves in 5 seconds, stop loading
+        const timeout = setTimeout(() => {
+            if (mounted && !initialDone) {
+                console.warn('[Auth] Timeout - forcing loading to false')
+                setLoading(false)
+            }
+        }, 5000)
+
+        return () => {
+            mounted = false
+            clearTimeout(timeout)
+            subscription?.unsubscribe()
+        }
     }, [])
 
     const login = async (email, password) => {
         try {
+            console.log('[Auth] Login attempt:', email)
             const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-            if (error) return { success: false, error: error.message }
+            if (error) {
+                console.error('[Auth] Login failed:', error.message)
+                return { success: false, error: error.message }
+            }
 
             const profile = await getUserProfile(data.user.id)
             if (!profile) {
@@ -57,6 +79,7 @@ export function AuthProvider({ children }) {
             setUser(profile)
             return { success: true, user: profile }
         } catch (err) {
+            console.error('[Auth] Login exception:', err)
             return { success: false, error: 'Error de conexión' }
         }
     }

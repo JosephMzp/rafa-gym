@@ -19,6 +19,7 @@ import Guests from './pages/admin/Guests'
 import Classes from './pages/admin/Classes'
 import Routines from './pages/admin/Routines'
 import Reports from './pages/admin/Reports'
+import Staff from './pages/admin/Staff'
 
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
@@ -63,6 +64,7 @@ export default function App() {
                 <Route path="classes" element={<Classes />} />
                 <Route path="routines" element={<Routines />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="staff" element={<Staff />} />
             </Route>
 
             {/* Client portal route */}

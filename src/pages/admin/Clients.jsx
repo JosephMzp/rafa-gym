@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { FiSearch, FiPlus, FiEdit2, FiEye, FiUserX, FiUserCheck, FiX } from 'react-icons/fi'
 import { getClients, getMembershipTypes, getLocations, createClient, updateClient } from '../../lib/services'
+import { getOptimizedUrl } from '../../lib/cloudinary'
+import ImageUpload from '../../components/ImageUpload'
 
 export default function Clients() {
     const [clients, setClients] = useState([])
@@ -88,7 +90,12 @@ export default function Clients() {
                             <tr key={c.id}>
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <div className="avatar">{c.name?.charAt(0)}</div>
+                                        {c.photo_url ? (
+                                            <img src={getOptimizedUrl(c.photo_url, { width: 80, height: 80 })} alt={c.name}
+                                                style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div className="avatar">{c.name?.charAt(0)}</div>
+                                        )}
                                         <div>
                                             <div style={{ fontWeight: 600 }}>{c.name}</div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.email}</div>
@@ -136,7 +143,12 @@ export default function Clients() {
                         </div>
                         <div className="modal-body">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
-                                <div className="avatar avatar-lg">{selectedClient.name?.charAt(0)}</div>
+                                {selectedClient.photo_url ? (
+                                    <img src={getOptimizedUrl(selectedClient.photo_url, { width: 160, height: 160 })} alt={selectedClient.name}
+                                        style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border-subtle)' }} />
+                                ) : (
+                                    <div className="avatar avatar-lg">{selectedClient.name?.charAt(0)}</div>
+                                )}
                                 <div>
                                     <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>{selectedClient.name}</h3>
                                     <span className={`badge ${selectedClient.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
@@ -185,7 +197,8 @@ function ClientFormModal({ client, membershipTypes, locations, onSave, onClose }
     const [form, setForm] = useState({
         name: client?.name || '', document: client?.document || '', email: client?.email || '',
         phone: client?.phone || '', birth_date: client?.birth_date || '', address: client?.address || '',
-        emergency_contact: client?.emergency_contact || '', location_id: client?.location_id || locations[0]?.id || ''
+        emergency_contact: client?.emergency_contact || '', location_id: client?.location_id || locations[0]?.id || '',
+        photo_url: client?.photo_url || ''
     })
     const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -197,6 +210,16 @@ function ClientFormModal({ client, membershipTypes, locations, onSave, onClose }
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
                 <div className="modal-body">
+                    {/* Photo Upload */}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-lg)' }}>
+                        <ImageUpload
+                            currentUrl={form.photo_url}
+                            onUpload={({ url }) => handleChange('photo_url', url || '')}
+                            folder="rafagym/clients"
+                            size={110}
+                            fallbackText={form.name?.charAt(0) || '?'}
+                        />
+                    </div>
                     <div className="form-grid">
                         <div className="form-group"><label className="form-label">Nombre Completo *</label><input className="form-input" value={form.name} onChange={e => handleChange('name', e.target.value)} placeholder="Nombre completo" /></div>
                         <div className="form-group"><label className="form-label">Documento *</label><input className="form-input" value={form.document} onChange={e => handleChange('document', e.target.value)} placeholder="DNI" /></div>
