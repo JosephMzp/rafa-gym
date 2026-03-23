@@ -30,6 +30,7 @@ export async function getUserProfile(userId) {
             name: staffData.name,
             email: staffData.email,
             phone: staffData.phone,
+            photo_url: staffData.photo_url || null,
             role: roleMap[staffData.roles?.name] || 'admin',
             roleName: staffData.roles?.name || 'Staff',
             isStaff: true
@@ -49,6 +50,12 @@ export async function getUserProfile(userId) {
             name: clientData.name,
             email: clientData.email,
             phone: clientData.phone,
+            photo_url: clientData.photo_url || null,
+            document: clientData.document,
+            birth_date: clientData.birth_date,
+            address: clientData.address,
+            emergency_contact: clientData.emergency_contact,
+            location_id: clientData.location_id,
             role: 'client',
             roleName: 'Cliente',
             isStaff: false
@@ -93,6 +100,35 @@ export async function getLocations() {
     const { data, error } = await supabase.from('locations').select('*').order('name')
     if (error) { console.error('getLocations error:', error); return [] }
     return data || []
+}
+
+// ============================================
+// EXERCISES
+// ============================================
+export async function getExercises() {
+    const { data, error } = await supabase.from('exercises').select('*').order('name')
+    if (error) { console.error('getExercises error:', error); return [] }
+    return data || []
+}
+
+export async function createExercise(exercise) {
+    const { data, error } = await supabase.from('exercises').insert(exercise).select()
+    if (error) throw error
+    return data
+}
+
+export async function updateExercise(id, updates) {
+    console.log('[updateExercise] Updating:', id, updates)
+    const { data, error } = await supabase.from('exercises').update(updates).eq('id', id).select()
+    console.log('[updateExercise] Result:', { data, error })
+    if (error) throw error
+    return data
+}
+
+export async function deleteExercise(id) {
+    const { error } = await supabase.from('exercises').delete().eq('id', id)
+    if (error) throw error
+    return true
 }
 
 // ============================================
@@ -252,6 +288,52 @@ export async function createClass(classData) {
     return data
 }
 
+export async function getClassEnrollments(classId) {
+    const { data, error } = await supabase
+        .from('class_enrollments')
+        .select('*, client:clients(id, name, photo_url)')
+        .eq('class_id', classId)
+        .order('enrolled_at', { ascending: false })
+    if (error) { console.error('getClassEnrollments error:', error); return [] }
+    return data || []
+}
+
+export async function enrollClientInClass(classId, clientId) {
+    const { data, error } = await supabase
+        .from('class_enrollments')
+        .insert({ class_id: classId, client_id: clientId, status: 'active' })
+        .select()
+        .single()
+    if (error) throw error
+    return data
+}
+
+export async function unenrollClient(enrollmentId) {
+    const { error } = await supabase.from('class_enrollments').delete().eq('id', enrollmentId)
+    if (error) throw error
+    return true
+}
+
+export async function getFitGoldClients() {
+    const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, photo_url, client_memberships(id, membership_type:membership_types(id, name))')
+        .eq('status', 'active')
+        .order('name')
+    if (error) { console.error('getFitGoldClients error:', error); return [] }
+    return (data || []).filter(function(c) {
+        var mt = c.client_memberships?.[0]?.membership_type?.name
+        return mt === 'Fit' || mt === 'Gold'
+    }).map(function(c) {
+        return {
+            id: c.id,
+            name: c.name,
+            photo_url: c.photo_url,
+            membership_type: c.client_memberships?.[0]?.membership_type?.name || ''
+        }
+    })
+}
+
 // ============================================
 // ROUTINES
 // ============================================
@@ -274,13 +356,50 @@ export async function createRoutine(routineData) {
     return data
 }
 
-// ============================================
-// EXERCISES
-// ============================================
-export async function getExercises() {
-    const { data, error } = await supabase.from('exercises').select('*').order('muscle_group, name')
-    if (error) { console.error('getExercises error:', error); return [] }
+export async function updateRoutine(id, updates) {
+    const { data, error } = await supabase.from('routines').update(updates).eq('id', id).select()
+    if (error) throw error
+    return data
+}
+
+export async function deleteRoutine(id) {
+    // First delete routine_exercises
+    await supabase.from('routine_exercises').delete().eq('routine_id', id)
+    const { error } = await supabase.from('routines').delete().eq('id', id)
+    if (error) throw error
+    return true
+}
+
+export async function getRoutineExercises(routineId) {
+    const { data, error } = await supabase
+        .from('routine_exercises')
+        .select('*, exercises(id, name, muscle_group, equipment, image_url)')
+        .eq('routine_id', routineId)
+        .order('day')
+        .order('order_index')
+    if (error) { console.error('getRoutineExercises error:', error); return [] }
     return data || []
+}
+
+export async function saveRoutineExercises(routineId, exerciseList) {
+    // Delete existing
+    await supabase.from('routine_exercises').delete().eq('routine_id', routineId)
+    if (!exerciseList || exerciseList.length === 0) return []
+    // Insert new
+    const rows = exerciseList.map(function(ex, i) {
+        return {
+            routine_id: routineId,
+            exercise_id: ex.exercise_id,
+            day: ex.day,
+            sets: ex.sets,
+            reps: ex.reps,
+            rest_seconds: ex.rest_seconds,
+            order_index: ex.order_index || (i + 1)
+        }
+    })
+    const { data, error } = await supabase.from('routine_exercises').insert(rows).select()
+    if (error) throw error
+    return data
 }
 
 // ============================================

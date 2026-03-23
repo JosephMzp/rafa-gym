@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import {
     FiHome, FiUsers, FiCalendar, FiDollarSign, FiAward, FiMapPin,
     FiUserPlus, FiBookOpen, FiActivity, FiBarChart2, FiMenu, FiX,
-    FiLogOut, FiChevronLeft, FiUser
+    FiLogOut, FiChevronLeft, FiUser, FiTarget
 } from 'react-icons/fi'
+import { getOptimizedUrl } from '../lib/cloudinary'
 import './AdminLayout.css'
 
 const menuItems = [
@@ -18,6 +19,7 @@ const menuItems = [
     { path: '/admin/guests', label: 'Invitados', icon: FiUserPlus },
     { path: '/admin/classes', label: 'Clases', icon: FiBookOpen },
     { path: '/admin/routines', label: 'Rutinas', icon: FiActivity },
+    { path: '/admin/exercises', label: 'Ejercicios', icon: FiTarget },
     { path: '/admin/reports', label: 'Reportes', icon: FiBarChart2 },
     { path: '/admin/staff', label: 'Empleados', icon: FiUser }
 ]
@@ -72,17 +74,22 @@ export default function AdminLayout() {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <div className="sidebar-user">
-                        <div className="avatar">
-                            {user?.name?.charAt(0) || 'A'}
-                        </div>
+                    <Link to="/admin/profile" className="sidebar-user" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+                        {user?.photo_url ? (
+                            <img src={getOptimizedUrl(user.photo_url, { width: 80, height: 80 })} alt={user?.name}
+                                style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                            <div className="avatar">
+                                {user?.name?.charAt(0) || 'A'}
+                            </div>
+                        )}
                         {!collapsed && (
                             <div className="sidebar-user-info">
                                 <span className="sidebar-user-name">{user?.name}</span>
                                 <span className="sidebar-user-role">{user?.role === 'admin' ? 'Administrador' : user?.role === 'receptionist' ? 'Recepcionista' : 'Entrenador'}</span>
                             </div>
                         )}
-                    </div>
+                    </Link>
                     <button className="btn btn-ghost btn-icon" onClick={handleLogout} title="Cerrar sesión">
                         <FiLogOut size={18} />
                     </button>
@@ -96,12 +103,17 @@ export default function AdminLayout() {
                         <FiMenu size={22} />
                     </button>
                     <div className="topbar-right">
-                        <div className="topbar-user">
-                            <div className="avatar" style={{ width: 32, height: 32, fontSize: '0.75rem' }}>
-                                {user?.name?.charAt(0) || 'A'}
-                            </div>
+                        <Link to="/admin/profile" className="topbar-user" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+                            {user?.photo_url ? (
+                                <img src={getOptimizedUrl(user.photo_url, { width: 64, height: 64 })} alt={user?.name}
+                                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                                <div className="avatar" style={{ width: 32, height: 32, fontSize: '0.75rem' }}>
+                                    {user?.name?.charAt(0) || 'A'}
+                                </div>
+                            )}
                             <span className="topbar-user-name">{user?.name}</span>
-                        </div>
+                        </Link>
                     </div>
                 </header>
 

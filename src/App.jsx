@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicLayout from './layouts/PublicLayout'
@@ -17,9 +18,11 @@ import Memberships from './pages/admin/Memberships'
 import Locations from './pages/admin/Locations'
 import Guests from './pages/admin/Guests'
 import Classes from './pages/admin/Classes'
-import Routines from './pages/admin/Routines'
+const Routines = lazy(() => import('./pages/admin/Routines'))
 import Reports from './pages/admin/Reports'
 import Staff from './pages/admin/Staff'
+const Exercises = lazy(() => import('./pages/admin/Exercises'))
+const Profile = lazy(() => import('./pages/admin/Profile'))
 
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
@@ -62,9 +65,11 @@ export default function App() {
                 <Route path="locations" element={<Locations />} />
                 <Route path="guests" element={<Guests />} />
                 <Route path="classes" element={<Classes />} />
-                <Route path="routines" element={<Routines />} />
+                <Route path="routines" element={<Suspense fallback={<div style={{textAlign:'center',padding:'4rem'}}><div className="spinner spinner-lg"></div></div>}><Routines /></Suspense>} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="staff" element={<Staff />} />
+                <Route path="exercises" element={<Suspense fallback={<div style={{textAlign:'center',padding:'4rem'}}><div className="spinner spinner-lg"></div></div>}><Exercises /></Suspense>} />
+                <Route path="profile" element={<Suspense fallback={<div style={{textAlign:'center',padding:'4rem'}}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
             </Route>
 
             {/* Client portal route */}
