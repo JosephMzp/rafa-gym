@@ -10,6 +10,22 @@ import {
 
 var CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 var UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+var WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+function parseClassDays(scheduleStr) {
+    if (!scheduleStr) return []
+    var str = scheduleStr.toLowerCase()
+    var res = []
+    if (str.includes('lun-vie')) return ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+    if (str.includes('lun')) res.push('Lunes')
+    if (str.includes('mar')) res.push('Martes')
+    if (str.includes('mié') || str.includes('mie')) res.push('Miércoles')
+    if (str.includes('jue')) res.push('Jueves')
+    if (str.includes('vie')) res.push('Viernes')
+    if (str.includes('sab') || str.includes('sáb')) res.push('Sábado')
+    if (str.includes('dom')) res.push('Domingo')
+    return res
+}
 
 function optimizeUrl(url, w, h) {
     if (!url || !url.includes('cloudinary.com')) return url
@@ -70,7 +86,16 @@ export default function ClientDashboard() {
     var fileRef = useRef(null)
 
     useEffect(function () {
-        if (user && user.id) loadClientData()
+        if (!user || !user.id) return
+        
+        loadClientData()
+        
+        var channel = supabase.channel('client_dashboard_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'class_enrollments', filter: 'client_id=eq.' + user.id }, function() { loadClientData() })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'routines', filter: 'client_id=eq.' + user.id }, function() { loadClientData() })
+            .subscribe()
+            
+        return function () { supabase.removeChannel(channel) }
     }, [user?.id])
 
     async function loadClientData() {
@@ -338,6 +363,56 @@ export default function ClientDashboard() {
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>dias restantes</div>
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* Horizontal Weekly Schedule */}
+                <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiCalendar color="var(--primary-400)" /> Mi Horario Semanal
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
+                        {WEEK_DAYS.map(function(day) {
+                            var isRoutine = routine?.days?.includes(day)
+                            var dayClasses = classes.filter(function(c) { return parseClassDays(c.class?.schedule).includes(day) })
+                            var active = isRoutine || dayClasses.length > 0
+                            
+                            return (
+                                <div key={day} style={{ 
+                                    background: active ? 'var(--dark-800)' : 'var(--dark-600)', 
+                                    border: '1px solid',
+                                    borderColor: active ? 'var(--primary-500)' : 'var(--border-subtle)',
+                                    borderRadius: 'var(--radius-md)', 
+                                    padding: '0.75rem',
+                                    opacity: active ? 1 : 0.6,
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}>
+                                    {active && <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: 'var(--primary-500)' }} />}
+                                    <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '0.5rem', color: active ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                                        {day}
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                                        {isRoutine && (
+                                            <div style={{ fontSize: '0.75rem', background: 'rgba(249,115,22,0.15)', color: '#f97316', padding: '0.25rem 0.5rem', borderRadius: 4, fontWeight: 600 }}>
+                                                {'💪'} Rutina
+                                            </div>
+                                        )}
+                                        {dayClasses.map(function(c) {
+                                            var timeMatch = c.class?.schedule.match(/\d{1,2}:\d{2}/)
+                                            var timeStr = timeMatch ? timeMatch[0] : ''
+                                            return (
+                                                <div key={c.id} style={{ fontSize: '0.75rem', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', padding: '0.25rem 0.5rem', borderRadius: 4, fontWeight: 600 }}>
+                                                    {'🧘'} {c.class?.name}
+                                                    {timeStr && <div style={{ fontSize: '0.65rem', opacity: 0.8, marginTop: 2 }}>{timeStr}</div>}
+                                                </div>
+                                            )
+                                        })}
+                                        {!active && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Libre</div>}
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
 
