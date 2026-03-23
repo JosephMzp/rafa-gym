@@ -315,23 +315,56 @@ export async function unenrollClient(enrollmentId) {
 }
 
 export async function getFitGoldClients() {
-    const { data, error } = await supabase
+    var response = await supabase
         .from('clients')
-        .select('id, name, photo_url, client_memberships(id, membership_type:membership_types(id, name))')
-        .eq('status', 'active')
-        .order('name')
-    if (error) { console.error('getFitGoldClients error:', error); return [] }
-    return (data || []).filter(function(c) {
-        var mt = c.client_memberships?.[0]?.membership_type?.name
-        return mt === 'Fit' || mt === 'Gold'
-    }).map(function(c) {
+        .select(`
+            id, name, email, document, photo_url,
+            client_memberships!inner(
+                id,
+                status,
+                membership_type:membership_types!inner(name)
+            )
+        `)
+        .eq('client_memberships.status', 'active')
+        .in('client_memberships.membership_types.short_name', ['gold', 'fit'])
+
+    if (response.error) {
+        console.error('Error fetching fit/gold clients:', response.error)
+        return []
+    }
+
+    return response.data.map(function (c) {
         return {
             id: c.id,
             name: c.name,
+            email: c.email,
+            document: c.document,
             photo_url: c.photo_url,
-            membership_type: c.client_memberships?.[0]?.membership_type?.name || ''
+            membership_type: c.client_memberships[0].membership_type.name
         }
     })
+}
+
+// ==========================================
+// Dashboard Analytics Services
+// ==========================================
+
+export async function getActiveClientsWithMembershipView() {
+    var res = await supabase.from('clientes_activos_con_membresia').select('*')
+    if (res.error) { console.error('Error fetching active clients view:', res.error); return [] }
+    return res.data
+}
+
+export async function getClassAttendanceStatsView() {
+    var res = await supabase.from('class_attendance_stats').select('*')
+    if (res.error) { console.error('Error fetching class stats view:', res.error); return [] }
+    return res.data
+}
+
+export async function getMonthlyRevenueView() {
+    var res = await supabase.from('monthly_revenue').select('*')
+    if (res.error) { console.error('Error fetching monthly revenue view:', res.error); return [] }
+    return res.data
 }
 
 // ============================================
