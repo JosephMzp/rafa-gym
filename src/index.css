@@ -104,6 +104,52 @@
   --content-max-width: 1400px;
 }
 
+/* ─── Light Theme Overrides ─── */
+[data-theme="light"] {
+  /* Colors - Light backgrounds mapped to 'dark' vars to reuse existing utility names seamlessly */
+  --dark-900: #f8fafc;
+  --dark-800: #ffffff;
+  --dark-700: #f1f5f9;
+  --dark-600: #e2e8f0;
+  --dark-500: #cbd5e1;
+  --dark-400: #94a3b8;
+  --dark-300: #64748b;
+  --dark-200: #475569;
+  --dark-100: #334155;
+
+  /* Accent adjustments for clarity on light bg */
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --warning-bg: rgba(234, 179, 8, 0.15);
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --info-bg: rgba(59, 130, 246, 0.15);
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Surfaces */
+  --surface-glass: rgba(255, 255, 255, 0.85);
+  --surface-card: rgba(255, 255, 255, 1);
+
+  /* Borders */
+  --border-subtle: rgba(15, 23, 42, 0.05);
+  --border-default: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.15);
+
+  /* Gradients */
+  --gradient-hero: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(248, 250, 252, 0.95) 50%);
+  --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
+  --gradient-glow: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.1) 0%, transparent 60%);
+
+  /* Shadows (darker shadows for contrast on light) */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.05);
+}
+
 /* ─── Reset & Base ─── */
 *, *::before, *::after {
   box-sizing: border-box;

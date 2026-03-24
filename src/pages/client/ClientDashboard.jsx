@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import {
     FiUser, FiAward, FiCalendar, FiDollarSign, FiActivity,
     FiBookOpen, FiCamera, FiMapPin, FiClock, FiPhone, FiMail,
-    FiEdit2, FiSave, FiX, FiLogOut
+    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon
 } from 'react-icons/fi'
 
 var CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
@@ -48,7 +48,15 @@ export default function ClientDashboard() {
     var user = auth.user
     var updateUser = auth.updateUser
     var logout = auth.logout
-    var navigate = useNavigate()
+    const navigate = useNavigate()
+
+    // Theme toggle
+    const [theme, setTheme] = useState(localStorage.getItem('rafagym-theme') || 'dark')
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme)
+        localStorage.setItem('rafagym-theme', theme)
+    }, [theme])
+    const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
     var _loading = useState(true)
     var _membership = useState(null)
@@ -66,6 +74,7 @@ export default function ClientDashboard() {
     var _uploading = useState(false)
     var _preview = useState(null)
     var _message = useState(null)
+    var _calendarMonth = useState(function() { var now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1) })
 
     var loading = _loading[0], setLoading = _loading[1]
     var membership = _membership[0], setMembership = _membership[1]
@@ -83,6 +92,7 @@ export default function ClientDashboard() {
     var uploading = _uploading[0], setUploading = _uploading[1]
     var preview = _preview[0], setPreview = _preview[1]
     var message = _message[0], setMessage = _message[1]
+    var calendarMonth = _calendarMonth[0], setCalendarMonth = _calendarMonth[1]
     var fileRef = useRef(null)
 
     useEffect(function () {
@@ -247,7 +257,13 @@ export default function ClientDashboard() {
                         <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{user?.name}</span>
                         <FiEdit2 size={12} color="var(--primary-400)" style={{ marginLeft: '0.25rem' }} />
                     </a>
-                    <button className="btn btn-ghost btn-sm" onClick={handleLogout}><FiLogOut size={14} /> Salir</button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                        <button className="btn btn-ghost btn-icon" onClick={toggleTheme} title="Cambiar tema">
+                            {theme === 'dark' ? <FiSun size={18} /> : <FiMoon size={18} />}
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={handleLogout}><FiLogOut size={14} /> Salir</button>
+                    </div>
                 </div>
             </nav>
 
@@ -366,55 +382,172 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* Horizontal Weekly Schedule */}
-                <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FiCalendar color="var(--primary-400)" /> Mi Horario Semanal
-                    </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
-                        {WEEK_DAYS.map(function(day) {
-                            var isRoutine = routine?.days?.includes(day)
-                            var dayClasses = classes.filter(function(c) { return parseClassDays(c.class?.schedule).includes(day) })
-                            var active = isRoutine || dayClasses.length > 0
-                            
-                            return (
-                                <div key={day} style={{ 
-                                    background: active ? 'var(--dark-800)' : 'var(--dark-600)', 
-                                    border: '1px solid',
-                                    borderColor: active ? 'var(--primary-500)' : 'var(--border-subtle)',
-                                    borderRadius: 'var(--radius-md)', 
-                                    padding: '0.75rem',
-                                    opacity: active ? 1 : 0.6,
-                                    position: 'relative',
-                                    overflow: 'hidden'
-                                }}>
-                                    {active && <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: 'var(--primary-500)' }} />}
-                                    <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '0.5rem', color: active ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                                        {day}
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                                        {isRoutine && (
-                                            <div style={{ fontSize: '0.75rem', background: 'rgba(249,115,22,0.15)', color: '#f97316', padding: '0.25rem 0.5rem', borderRadius: 4, fontWeight: 600 }}>
-                                                {'💪'} Rutina
-                                            </div>
-                                        )}
-                                        {dayClasses.map(function(c) {
-                                            var timeMatch = c.class?.schedule.match(/\d{1,2}:\d{2}/)
-                                            var timeStr = timeMatch ? timeMatch[0] : ''
-                                            return (
-                                                <div key={c.id} style={{ fontSize: '0.75rem', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', padding: '0.25rem 0.5rem', borderRadius: 4, fontWeight: 600 }}>
-                                                    {'🧘'} {c.class?.name}
-                                                    {timeStr && <div style={{ fontSize: '0.65rem', opacity: 0.8, marginTop: 2 }}>{timeStr}</div>}
-                                                </div>
-                                            )
-                                        })}
-                                        {!active && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Libre</div>}
-                                    </div>
+                {/* ═══ MONTHLY CALENDAR ═══ */}
+                {(function() {
+                    var today = new Date()
+                    var calMonth = calendarMonth || new Date(today.getFullYear(), today.getMonth(), 1)
+
+                    var year = calMonth.getFullYear()
+                    var month = calMonth.getMonth()
+                    var firstDay = new Date(year, month, 1)
+                    var lastDay = new Date(year, month + 1, 0)
+                    var startDow = firstDay.getDay() // 0=Sun
+                    // Adjust to start on Monday: Mon=0...Sun=6
+                    var startOffset = (startDow === 0) ? 6 : startDow - 1
+                    var totalDays = lastDay.getDate()
+                    var cells = []
+
+                    // Previous month padding
+                    var prevMonthLast = new Date(year, month, 0).getDate()
+                    for (var p = startOffset - 1; p >= 0; p--) {
+                        cells.push({ day: prevMonthLast - p, inMonth: false })
+                    }
+
+                    // Current month days
+                    for (var d = 1; d <= totalDays; d++) {
+                        cells.push({ day: d, inMonth: true })
+                    }
+
+                    // Next month padding to fill 6 rows max
+                    var remainder = cells.length % 7
+                    if (remainder > 0) {
+                        for (var n = 1; n <= 7 - remainder; n++) {
+                            cells.push({ day: n, inMonth: false })
+                        }
+                    }
+
+                    var dayIndexMap = { 'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6 }
+                    var monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+                    function getDow(dayNum) {
+                        var dt = new Date(year, month, dayNum)
+                        var js = dt.getDay() // 0=Sun
+                        return js === 0 ? 6 : js - 1 // Mon=0...Sun=6
+                    }
+
+                    function prevMonth() { setCalendarMonth(new Date(year, month - 1, 1)) }
+                    function nextMonth() { setCalendarMonth(new Date(year, month + 1, 1)) }
+                    function goToday() { setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1)) }
+
+                    return (
+                        <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
+                            {/* Header */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+                                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                    <FiCalendar color="var(--primary-400)" /> Mi Calendario
+                                </h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <button onClick={prevMonth} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)' }}>{'‹'}</button>
+                                    <button onClick={goToday} style={{
+                                        background: 'none', border: '1px solid var(--border-default)', color: 'var(--text-primary)',
+                                        padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700,
+                                        fontFamily: 'var(--font-display)', minWidth: 160, textAlign: 'center'
+                                    }}>
+                                        {monthNames[month] + ' ' + year}
+                                    </button>
+                                    <button onClick={nextMonth} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)' }}>{'›'}</button>
                                 </div>
-                            )
-                        })}
-                    </div>
-                </div>
+                            </div>
+
+                            {/* Day-of-week headers */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
+                                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(function(dh) {
+                                    return (
+                                        <div key={dh} style={{
+                                            textAlign: 'center', fontWeight: 700, fontSize: '0.75rem',
+                                            color: dh === 'Dom' || dh === 'Sáb' ? 'var(--primary-400)' : 'var(--text-secondary)',
+                                            padding: '0.375rem 0', textTransform: 'uppercase', letterSpacing: '0.05em'
+                                        }}>{dh}</div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Calendar grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+                                {cells.map(function(cell, idx) {
+                                    if (!cell.inMonth) {
+                                        return (
+                                            <div key={'pad-' + idx} style={{
+                                                minHeight: 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--dark-700)', opacity: 0.3
+                                            }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{cell.day}</span>
+                                            </div>
+                                        )
+                                    }
+
+                                    var isToday = cell.day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+                                    var dow = getDow(cell.day) // Mon=0...Sun=6
+                                    var weekDayName = WEEK_DAYS[dow]
+
+                                    var isRoutine = routine && routine.days && routine.days.includes(weekDayName)
+                                    var dayClasses = classes.filter(function(c) { return parseClassDays(c.class?.schedule).includes(weekDayName) })
+                                    var hasEvents = isRoutine || dayClasses.length > 0
+
+                                    return (
+                                        <div key={'d-' + cell.day} style={{
+                                            minHeight: 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)',
+                                            background: isToday ? 'rgba(249,115,22,0.12)' : hasEvents ? 'var(--dark-800)' : 'var(--dark-700)',
+                                            border: isToday ? '2px solid var(--primary-500)' : '1px solid var(--border-subtle)',
+                                            transition: 'background 0.15s, border-color 0.15s',
+                                            position: 'relative', overflow: 'hidden'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                                <span style={{
+                                                    fontSize: isToday ? '0.8125rem' : '0.75rem',
+                                                    fontWeight: isToday ? 800 : 600,
+                                                    color: isToday ? 'var(--primary-400)' : 'var(--text-primary)',
+                                                    width: isToday ? 24 : 'auto', height: isToday ? 24 : 'auto',
+                                                    borderRadius: '50%',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: isToday ? 'var(--primary-500)' : 'transparent',
+                                                    color: isToday ? 'white' : 'var(--text-primary)'
+                                                }}>{cell.day}</span>
+                                                {(dow >= 5) && <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--primary-400)', opacity: 0.4 }} />}
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                {isRoutine && (
+                                                    <div style={{
+                                                        fontSize: '0.625rem', background: 'rgba(249,115,22,0.2)', color: '#f97316',
+                                                        padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.4,
+                                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                    }}>{'💪'} Rutina</div>
+                                                )}
+                                                {dayClasses.map(function(c) {
+                                                    var timeMatch = c.class?.schedule ? c.class.schedule.match(/\d{1,2}:\d{2}/) : null
+                                                    var timeStr = timeMatch ? timeMatch[0] : ''
+                                                    return (
+                                                        <div key={c.id} style={{
+                                                            fontSize: '0.625rem', background: 'rgba(139,92,246,0.2)', color: '#8b5cf6',
+                                                            padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.4,
+                                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                        }}>
+                                                            {c.class?.name}{timeStr ? ' ' + timeStr : ''}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Legend */}
+                            <div style={{ display: 'flex', gap: 'var(--space-lg)', marginTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(249,115,22,0.3)' }} /> Rutina programada
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(139,92,246,0.3)' }} /> Clase grupal
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary-500)' }} /> Hoy
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })()}
 
                 {/* Stats Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>

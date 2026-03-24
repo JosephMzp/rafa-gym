@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { FiMenu, FiX } from 'react-icons/fi'
+import { FiMenu, FiX, FiSun, FiMoon } from 'react-icons/fi'
 import './PublicLayout.css'
 
 export default function PublicLayout() {
@@ -14,6 +14,14 @@ export default function PublicLayout() {
         { label: 'Sedes', href: '#sedes' },
         { label: 'Contacto', href: '#contacto' }
     ]
+
+    // Theme toggle
+    const [theme, setTheme] = useState(localStorage.getItem('rafagym-theme') || 'dark')
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme)
+        localStorage.setItem('rafagym-theme', theme)
+    }, [theme])
+    const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
     const isHome = location.pathname === '/'
 
@@ -34,9 +42,14 @@ export default function PublicLayout() {
                         )) : (
                             <Link to="/" className="nav-link">Inicio</Link>
                         )}
-                        <Link to="/login" className="btn btn-primary btn-sm nav-cta" onClick={() => setMenuOpen(false)}>
-                            Iniciar Sesión
-                        </Link>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <button className="btn btn-ghost btn-icon" onClick={toggleTheme} title="Cambiar tema" style={{ color: 'var(--text-primary)' }}>
+                                {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
+                            </button>
+                            <Link to="/login" className="btn btn-primary btn-sm nav-cta" onClick={() => setMenuOpen(false)}>
+                                Iniciar Sesión
+                            </Link>
+                        </div>
                     </div>
 
                     <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
