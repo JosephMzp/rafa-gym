@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import {
     FiUser, FiAward, FiCalendar, FiDollarSign, FiActivity,
     FiBookOpen, FiCamera, FiMapPin, FiClock, FiPhone, FiMail,
-    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon
+    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon, FiPlus, FiCheck, FiUsers
 } from 'react-icons/fi'
 
 var CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
@@ -74,7 +74,11 @@ export default function ClientDashboard() {
     var _uploading = useState(false)
     var _preview = useState(null)
     var _message = useState(null)
-    var _calendarMonth = useState(function() { var now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1) })
+    var _calendarMonth = useState(function () { var now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1) })
+    var _calendarView = useState('weekly')
+    var _allClasses = useState([])
+    var _enrolling = useState(false)
+    var _enrollMsg = useState(null)
 
     var loading = _loading[0], setLoading = _loading[1]
     var membership = _membership[0], setMembership = _membership[1]
@@ -93,18 +97,22 @@ export default function ClientDashboard() {
     var preview = _preview[0], setPreview = _preview[1]
     var message = _message[0], setMessage = _message[1]
     var calendarMonth = _calendarMonth[0], setCalendarMonth = _calendarMonth[1]
+    var calendarView = _calendarView[0], setCalendarView = _calendarView[1]
+    var allClasses = _allClasses[0], setAllClasses = _allClasses[1]
+    var enrolling = _enrolling[0], setEnrolling = _enrolling[1]
+    var enrollMsg = _enrollMsg[0], setEnrollMsg = _enrollMsg[1]
     var fileRef = useRef(null)
 
     useEffect(function () {
         if (!user || !user.id) return
-        
+
         loadClientData()
-        
+
         var channel = supabase.channel('client_dashboard_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'class_enrollments', filter: 'client_id=eq.' + user.id }, function() { loadClientData() })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'routines', filter: 'client_id=eq.' + user.id }, function() { loadClientData() })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'class_enrollments', filter: 'client_id=eq.' + user.id }, function () { loadClientData() })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'routines', filter: 'client_id=eq.' + user.id }, function () { loadClientData() })
             .subscribe()
-            
+
         return function () { supabase.removeChannel(channel) }
     }, [user?.id])
 
@@ -161,6 +169,14 @@ export default function ClientDashboard() {
                 .eq('client_id', clientId)
                 .eq('status', 'active')
             setClasses(clsRes.data || [])
+
+            // All available active classes (for self-enrollment)
+            var allClsRes = await supabase
+                .from('classes')
+                .select('*, location:locations(name), class_enrollments(id, client_id)')
+                .eq('status', 'active')
+                .order('name')
+            setAllClasses(allClsRes.data || [])
 
         } catch (err) { console.error('loadClientData error:', err) }
         finally { setLoading(false) }
@@ -241,11 +257,11 @@ export default function ClientDashboard() {
                     </span>
                 </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                    <a href="#mis-datos" onClick={function(e) { e.preventDefault(); document.getElementById('mis-datos').scrollIntoView({ behavior: 'smooth' }); startEditing() }}
+                    <a href="#mis-datos" onClick={function (e) { e.preventDefault(); document.getElementById('mis-datos').scrollIntoView({ behavior: 'smooth' }); startEditing() }}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit', cursor: 'pointer', padding: '0.375rem 0.625rem', borderRadius: 'var(--radius-md)', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', transition: 'background 0.2s, border-color 0.2s' }}
                         title="Editar mis datos"
-                        onMouseEnter={function(e) { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'var(--dark-700)' }}
-                        onMouseLeave={function(e) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}>
+                        onMouseEnter={function (e) { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'var(--dark-700)' }}
+                        onMouseLeave={function (e) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}>
                         {user?.photo_url ? (
                             <img src={optimizeUrl(user.photo_url, 64, 64)} alt={user?.name}
                                 style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-500)' }} />
@@ -382,159 +398,187 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* ═══ MONTHLY CALENDAR ═══ */}
-                {(function() {
+                {/* ═══ CALENDAR (Weekly / Monthly) ═══ */}
+                {(function () {
                     var today = new Date()
                     var calMonth = calendarMonth || new Date(today.getFullYear(), today.getMonth(), 1)
-
                     var year = calMonth.getFullYear()
                     var month = calMonth.getMonth()
-                    var firstDay = new Date(year, month, 1)
-                    var lastDay = new Date(year, month + 1, 0)
-                    var startDow = firstDay.getDay() // 0=Sun
-                    // Adjust to start on Monday: Mon=0...Sun=6
-                    var startOffset = (startDow === 0) ? 6 : startDow - 1
-                    var totalDays = lastDay.getDate()
-                    var cells = []
-
-                    // Previous month padding
-                    var prevMonthLast = new Date(year, month, 0).getDate()
-                    for (var p = startOffset - 1; p >= 0; p--) {
-                        cells.push({ day: prevMonthLast - p, inMonth: false })
-                    }
-
-                    // Current month days
-                    for (var d = 1; d <= totalDays; d++) {
-                        cells.push({ day: d, inMonth: true })
-                    }
-
-                    // Next month padding to fill 6 rows max
-                    var remainder = cells.length % 7
-                    if (remainder > 0) {
-                        for (var n = 1; n <= 7 - remainder; n++) {
-                            cells.push({ day: n, inMonth: false })
-                        }
-                    }
-
-                    var dayIndexMap = { 'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6 }
                     var monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+                    var calView = calendarView || 'weekly'
 
-                    function getDow(dayNum) {
-                        var dt = new Date(year, month, dayNum)
-                        var js = dt.getDay() // 0=Sun
-                        return js === 0 ? 6 : js - 1 // Mon=0...Sun=6
+                    // ── helpers ──────────────────────────────────────────────────────
+                    function getDow(dt) { var js = dt.getDay(); return js === 0 ? 6 : js - 1 } // Mon=0…Sun=6
+
+                    function getTimeMinutes(scheduleStr) {
+                        if (!scheduleStr) return 9999
+                        var m = scheduleStr.match(/(\d{1,2}):(\d{2})/)
+                        return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 9999
                     }
 
-                    function prevMonth() { setCalendarMonth(new Date(year, month - 1, 1)) }
-                    function nextMonth() { setCalendarMonth(new Date(year, month + 1, 1)) }
-                    function goToday() { setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1)) }
+                    function sortedDayClasses(dayName) {
+                        return classes
+                            .filter(function (c) { return parseClassDays(c.class?.schedule).includes(dayName) })
+                            .slice()
+                            .sort(function (a, b) { return getTimeMinutes(a.class?.schedule) - getTimeMinutes(b.class?.schedule) })
+                    }
+
+                    function renderDayCell(opts) {
+                        // opts: { dayLabel, dayNum, isToday, isWeekend, weekDayName, isCurrentMonth=true, isPad=false }
+                        if (opts.isPad) return (
+                            <div style={{ minHeight: calView === 'weekly' ? 110 : 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)', background: 'var(--dark-700)', opacity: 0.25 }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opts.dayNum}</span>
+                            </div>
+                        )
+                        var isRoutine = routine && routine.days && routine.days.includes(opts.weekDayName)
+                        var dayClasses2 = sortedDayClasses(opts.weekDayName)
+                        var hasEvents = isRoutine || dayClasses2.length > 0
+                        return (
+                            <div style={{
+                                minHeight: calView === 'weekly' ? 110 : 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)',
+                                background: opts.isToday ? 'rgba(249,115,22,0.12)' : hasEvents ? 'var(--dark-800)' : 'var(--dark-700)',
+                                border: opts.isToday ? '2px solid var(--primary-500)' : '1px solid var(--border-subtle)',
+                                transition: 'background 0.15s, border-color 0.15s', overflow: 'hidden'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                    {calView === 'weekly' ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                                            <span style={{ fontSize: '0.625rem', color: opts.isWeekend ? 'var(--primary-400)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                {opts.dayLabel}
+                                            </span>
+                                            <span style={{
+                                                fontSize: '1.1rem', fontWeight: opts.isToday ? 900 : 700, lineHeight: 1,
+                                                width: opts.isToday ? 30 : 'auto', height: opts.isToday ? 30 : 'auto',
+                                                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                background: opts.isToday ? 'var(--primary-500)' : 'transparent',
+                                                color: opts.isToday ? 'white' : opts.isWeekend ? 'var(--primary-400)' : 'var(--text-primary)'
+                                            }}>{opts.dayNum}</span>
+                                        </div>
+                                    ) : (
+                                        <span style={{
+                                            fontSize: opts.isToday ? '0.8125rem' : '0.75rem', fontWeight: opts.isToday ? 800 : 600,
+                                            width: opts.isToday ? 24 : 'auto', height: opts.isToday ? 24 : 'auto', borderRadius: '50%',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            background: opts.isToday ? 'var(--primary-500)' : 'transparent',
+                                            color: opts.isToday ? 'white' : 'var(--text-primary)'
+                                        }}>{opts.dayNum}</span>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    {isRoutine && (
+                                        <div style={{ fontSize: '0.625rem', background: 'rgba(249,115,22,0.2)', color: '#f97316', padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            💪 Rutina
+                                        </div>
+                                    )}
+                                    {dayClasses2.map(function (c) {
+                                        var timeMatch = c.class?.schedule ? c.class.schedule.match(/\d{1,2}:\d{2}/) : null
+                                        var timeStr = timeMatch ? timeMatch[0] : ''
+                                        return (
+                                            <div key={c.id} style={{ fontSize: '0.625rem', background: 'rgba(139,92,246,0.2)', color: '#8b5cf6', padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {timeStr && <span style={{ marginRight: 2, opacity: 0.8 }}>{timeStr}</span>}{c.class?.name}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    // ── WEEKLY view: compute the 7 days of the current week ──────────
+                    function renderWeekly() {
+                        var todayDow = getDow(today) // 0=Mon
+                        var weekStart = new Date(today)
+                        weekStart.setDate(today.getDate() - todayDow)
+                        var weekDays = []
+                        for (var i = 0; i < 7; i++) {
+                            var d = new Date(weekStart)
+                            d.setDate(weekStart.getDate() + i)
+                            weekDays.push(d)
+                        }
+                        var shortLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+                        return (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                                {weekDays.map(function (dt, i) {
+                                    var isToday = dt.toDateString() === today.toDateString()
+                                    var weekDayName = WEEK_DAYS[i]
+                                    return renderDayCell({
+                                        dayLabel: shortLabels[i],
+                                        dayNum: dt.getDate(),
+                                        isToday: isToday,
+                                        isWeekend: i >= 5,
+                                        weekDayName: weekDayName
+                                    })
+                                })}
+                            </div>
+                        )
+                    }
+
+                    // ── MONTHLY view ─────────────────────────────────────────────────
+                    function renderMonthly() {
+                        var firstDay = new Date(year, month, 1)
+                        var totalDays = new Date(year, month + 1, 0).getDate()
+                        var startOffset = getDow(firstDay)
+                        var prevMonthLast = new Date(year, month, 0).getDate()
+                        var cells = []
+                        for (var p = startOffset - 1; p >= 0; p--) cells.push({ day: prevMonthLast - p, inMonth: false })
+                        for (var d = 1; d <= totalDays; d++) cells.push({ day: d, inMonth: true })
+                        var rem = cells.length % 7
+                        if (rem > 0) for (var n = 1; n <= 7 - rem; n++) cells.push({ day: n, inMonth: false })
+
+                        return (
+                            <>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
+                                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(function (dh) {
+                                        return <div key={dh} style={{ textAlign: 'center', fontWeight: 700, fontSize: '0.7rem', color: dh === 'Dom' || dh === 'Sáb' ? 'var(--primary-400)' : 'var(--text-secondary)', padding: '0.25rem 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{dh}</div>
+                                    })}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+                                    {cells.map(function (cell, idx) {
+                                        if (!cell.inMonth) return renderDayCell({ isPad: true, dayNum: cell.day, key: 'pad-' + idx })
+                                        var dt = new Date(year, month, cell.day)
+                                        var dow = getDow(dt)
+                                        return <div key={'d-' + cell.day}>{renderDayCell({ dayLabel: '', dayNum: cell.day, isToday: cell.day === today.getDate() && month === today.getMonth() && year === today.getFullYear(), isWeekend: dow >= 5, weekDayName: WEEK_DAYS[dow] })}</div>
+                                    })}
+                                </div>
+                            </>
+                        )
+                    }
+
+                    var btnBase = { padding: '0.25rem 0.875rem', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--border-default)', transition: 'all 0.15s' }
+                    var btnActive = Object.assign({}, btnBase, { background: 'var(--primary-500)', color: 'white', borderColor: 'var(--primary-500)' })
+                    var btnInactive = Object.assign({}, btnBase, { background: 'none', color: 'var(--text-secondary)' })
 
                     return (
                         <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
                             {/* Header */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                                     <FiCalendar color="var(--primary-400)" /> Mi Calendario
+                                    {calView === 'weekly' && (
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '0.25rem' }}>
+                                            — Semana actual
+                                        </span>
+                                    )}
                                 </h3>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <button onClick={prevMonth} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)' }}>{'‹'}</button>
-                                    <button onClick={goToday} style={{
-                                        background: 'none', border: '1px solid var(--border-default)', color: 'var(--text-primary)',
-                                        padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700,
-                                        fontFamily: 'var(--font-display)', minWidth: 160, textAlign: 'center'
-                                    }}>
-                                        {monthNames[month] + ' ' + year}
-                                    </button>
-                                    <button onClick={nextMonth} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)' }}>{'›'}</button>
+                                    {/* Semanal/Mensual toggle */}
+                                    <button onClick={function () { setCalendarView('weekly') }} style={calView === 'weekly' ? btnActive : btnInactive}>Semanal</button>
+                                    <button onClick={function () { setCalendarView('monthly') }} style={calView === 'monthly' ? btnActive : btnInactive}>Mensual</button>
+                                    {/* Month nav (only in monthly view) */}
+                                    {calView === 'monthly' && (
+                                        <>
+                                            <button onClick={function () { setCalendarMonth(new Date(year, month - 1, 1)) }} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32 }}>{'‹'}</button>
+                                            <span style={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 140, textAlign: 'center', color: 'var(--text-primary)' }}>{monthNames[month] + ' ' + year}</span>
+                                            <button onClick={function () { setCalendarMonth(new Date(year, month + 1, 1)) }} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32 }}>{'›'}</button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Day-of-week headers */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
-                                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(function(dh) {
-                                    return (
-                                        <div key={dh} style={{
-                                            textAlign: 'center', fontWeight: 700, fontSize: '0.75rem',
-                                            color: dh === 'Dom' || dh === 'Sáb' ? 'var(--primary-400)' : 'var(--text-secondary)',
-                                            padding: '0.375rem 0', textTransform: 'uppercase', letterSpacing: '0.05em'
-                                        }}>{dh}</div>
-                                    )
-                                })}
-                            </div>
-
-                            {/* Calendar grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-                                {cells.map(function(cell, idx) {
-                                    if (!cell.inMonth) {
-                                        return (
-                                            <div key={'pad-' + idx} style={{
-                                                minHeight: 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)',
-                                                background: 'var(--dark-700)', opacity: 0.3
-                                            }}>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{cell.day}</span>
-                                            </div>
-                                        )
-                                    }
-
-                                    var isToday = cell.day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-                                    var dow = getDow(cell.day) // Mon=0...Sun=6
-                                    var weekDayName = WEEK_DAYS[dow]
-
-                                    var isRoutine = routine && routine.days && routine.days.includes(weekDayName)
-                                    var dayClasses = classes.filter(function(c) { return parseClassDays(c.class?.schedule).includes(weekDayName) })
-                                    var hasEvents = isRoutine || dayClasses.length > 0
-
-                                    return (
-                                        <div key={'d-' + cell.day} style={{
-                                            minHeight: 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)',
-                                            background: isToday ? 'rgba(249,115,22,0.12)' : hasEvents ? 'var(--dark-800)' : 'var(--dark-700)',
-                                            border: isToday ? '2px solid var(--primary-500)' : '1px solid var(--border-subtle)',
-                                            transition: 'background 0.15s, border-color 0.15s',
-                                            position: 'relative', overflow: 'hidden'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                                                <span style={{
-                                                    fontSize: isToday ? '0.8125rem' : '0.75rem',
-                                                    fontWeight: isToday ? 800 : 600,
-                                                    color: isToday ? 'var(--primary-400)' : 'var(--text-primary)',
-                                                    width: isToday ? 24 : 'auto', height: isToday ? 24 : 'auto',
-                                                    borderRadius: '50%',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    background: isToday ? 'var(--primary-500)' : 'transparent',
-                                                    color: isToday ? 'white' : 'var(--text-primary)'
-                                                }}>{cell.day}</span>
-                                                {(dow >= 5) && <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--primary-400)', opacity: 0.4 }} />}
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                {isRoutine && (
-                                                    <div style={{
-                                                        fontSize: '0.625rem', background: 'rgba(249,115,22,0.2)', color: '#f97316',
-                                                        padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.4,
-                                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                                    }}>{'💪'} Rutina</div>
-                                                )}
-                                                {dayClasses.map(function(c) {
-                                                    var timeMatch = c.class?.schedule ? c.class.schedule.match(/\d{1,2}:\d{2}/) : null
-                                                    var timeStr = timeMatch ? timeMatch[0] : ''
-                                                    return (
-                                                        <div key={c.id} style={{
-                                                            fontSize: '0.625rem', background: 'rgba(139,92,246,0.2)', color: '#8b5cf6',
-                                                            padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.4,
-                                                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                                        }}>
-                                                            {c.class?.name}{timeStr ? ' ' + timeStr : ''}
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
+                            {calView === 'weekly' ? renderWeekly() : renderMonthly()}
 
                             {/* Legend */}
-                            <div style={{ display: 'flex', gap: 'var(--space-lg)', marginTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
+                            <div style={{ display: 'flex', gap: 'var(--space-lg)', marginTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)', flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                     <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(249,115,22,0.3)' }} /> Rutina programada
                                 </div>
@@ -548,6 +592,8 @@ export default function ClientDashboard() {
                         </div>
                     )
                 })()}
+                var today = new Date()
+                var calMonth = calendarMonth || new Date(today.getFullYear(), today.getMonth(), 1)
 
                 {/* Stats Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
@@ -737,6 +783,142 @@ export default function ClientDashboard() {
                         )}
                     </div>
                 </div>
+
+                {/* ═══ SELF-ENROLLMENT (Fit / Gold only) ═══ */}
+                {(membershipName === 'Fit' || membershipName === 'Gold') && (function () {
+                    var isFitGold = true
+
+                    async function handleEnroll(cls) {
+                        if (enrolling) return
+                        var alreadyEnrolled = (cls.class_enrollments || []).some(function (e) { return e.client_id === user.id })
+                        setEnrolling(true)
+                        try {
+                            if (alreadyEnrolled) {
+                                var myEnrollment = (cls.class_enrollments || []).find(function (e) { return e.client_id === user.id })
+                                if (myEnrollment) {
+                                    await supabase.from('class_enrollments').delete().eq('id', myEnrollment.id)
+                                }
+                                setEnrollMsg('✓ Matricula cancelada de ' + cls.name)
+                            } else {
+                                var currentCount = (cls.class_enrollments || []).length
+                                if (currentCount >= cls.capacity) {
+                                    setEnrollMsg('⚠ Esta clase está llena (capacidad: ' + cls.capacity + ')')
+                                    setTimeout(function () { setEnrollMsg(null) }, 3000)
+                                    setEnrolling(false)
+                                    return
+                                }
+                                await supabase.from('class_enrollments').insert({ class_id: cls.id, client_id: user.id, status: 'active' })
+                                setEnrollMsg('✓ ¡Matriculado en ' + cls.name + '!')
+                            }
+                            setTimeout(function () { setEnrollMsg(null) }, 3000)
+                            loadClientData()
+                        } catch (err) {
+                            console.error(err)
+                            setEnrollMsg('Error al procesar la solicitud')
+                            setTimeout(function () { setEnrollMsg(null) }, 3000)
+                        }
+                        finally { setEnrolling(false) }
+                    }
+
+                    return (
+                        <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+                                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                    <FiUsers color="#8b5cf6" /> Clases Grupales Disponibles
+                                </h3>
+                                <span style={{
+                                    fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.625rem',
+                                    borderRadius: 'var(--radius-full)',
+                                    background: membershipName === 'Gold' ? 'rgba(245,158,11,0.15)' : 'rgba(139,92,246,0.15)',
+                                    color: membershipName === 'Gold' ? '#f59e0b' : '#8b5cf6',
+                                    border: '1px solid currentColor'
+                                }}>
+                                    {membershipName === 'Gold' ? '🥇' : '🥈'} {membershipName} — Acceso Gratis
+                                </span>
+                            </div>
+
+                            {enrollMsg && (
+                                <div style={{
+                                    padding: '0.625rem 1rem', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)',
+                                    background: enrollMsg.startsWith('⚠') ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                                    color: enrollMsg.startsWith('⚠') ? '#f59e0b' : '#10b981',
+                                    fontSize: '0.875rem', fontWeight: 600,
+                                    border: '1px solid ' + (enrollMsg.startsWith('⚠') ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.3)')
+                                }}>{enrollMsg}</div>
+                            )}
+
+                            {allClasses.length === 0 ? (
+                                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>No hay clases activas disponibles</p>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                                    {allClasses.map(function (cls) {
+                                        var enrolledCount = (cls.class_enrollments || []).length
+                                        var alreadyEnrolled = (cls.class_enrollments || []).some(function (e) { return e.client_id === user.id })
+                                        var isFull = enrolledCount >= cls.capacity && !alreadyEnrolled
+                                        var pct = Math.min(100, Math.round((enrolledCount / cls.capacity) * 100))
+                                        var barColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#10b981'
+
+                                        return (
+                                            <div key={cls.id} style={{
+                                                borderRadius: 'var(--radius-md)', padding: '1rem',
+                                                background: alreadyEnrolled ? 'rgba(139,92,246,0.08)' : 'var(--dark-700)',
+                                                border: '1px solid ' + (alreadyEnrolled ? '#8b5cf6' : 'var(--border-subtle)'),
+                                                transition: 'border-color 0.2s, background 0.2s',
+                                                opacity: isFull ? 0.6 : 1
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.125rem' }}>{cls.name}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            {cls.instructor && <span>👤 {cls.instructor} · </span>}
+                                                            {cls.location?.name}
+                                                        </div>
+                                                    </div>
+                                                    {alreadyEnrolled && (
+                                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-full)', background: 'rgba(139,92,246,0.25)', color: '#8b5cf6', whiteSpace: 'nowrap' }}>
+                                                            ✓ Inscrito
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.625rem' }}>
+                                                    🕐 {cls.schedule}
+                                                </div>
+
+                                                {/* Capacity bar */}
+                                                <div style={{ marginBottom: '0.625rem' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                                                        <span>Ocupación</span>
+                                                        <span style={{ color: barColor, fontWeight: 700 }}>{enrolledCount}/{cls.capacity}</span>
+                                                    </div>
+                                                    <div style={{ height: 4, borderRadius: 2, background: 'var(--dark-500)', overflow: 'hidden' }}>
+                                                        <div style={{ height: '100%', width: pct + '%', background: barColor, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={function () { handleEnroll(cls) }}
+                                                    disabled={isFull || enrolling}
+                                                    style={{
+                                                        width: '100%', padding: '0.5rem', borderRadius: 'var(--radius-md)',
+                                                        fontWeight: 700, fontSize: '0.8125rem', cursor: isFull ? 'not-allowed' : 'pointer',
+                                                        border: 'none', transition: 'all 0.2s',
+                                                        background: isFull ? 'var(--dark-500)' : alreadyEnrolled ? 'rgba(239,68,68,0.15)' : 'rgba(139,92,246,0.2)',
+                                                        color: isFull ? 'var(--text-muted)' : alreadyEnrolled ? '#ef4444' : '#8b5cf6'
+                                                    }}
+                                                >
+                                                    {isFull ? 'Clase Llena'
+                                                        : alreadyEnrolled ? '✕ Cancelar Matrícula'
+                                                            : '+ Matricularme'}
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )
+                })()}
 
                 {/* Personal Info */}
                 <div className="card" id="mis-datos">

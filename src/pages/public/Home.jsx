@@ -1,5 +1,16 @@
-import { MEMBERSHIP_TYPES, LOCATIONS } from '../../data/demoData'
 import './Home.css'
+
+var MEMBERSHIP_TYPES = [
+    { id: 1, name: 'Estándar', price: 89.90, icon: '🥉', features: ['Acceso a 1 sede', '1 ingreso/día', 'Zona de máquinas'] },
+    { id: 2, name: 'Fit', price: 149.90, icon: '🥈', features: ['Acceso a todas las sedes', '1 ingreso/día', 'Asesoramiento', 'Clases grupales gratis'] },
+    { id: 3, name: 'Gold', price: 219.90, icon: '🥇', features: ['Acceso ilimitado', 'Ingresos ilimitados', 'Asesoramiento', 'Clases grupales gratis', '5 invitados/mes'] }
+]
+
+var LOCATIONS = [
+    { id: 1, name: 'RafaGym - Sede Av. San Juan', address: 'Av. Guillermo Billinghurst 497, S.J.M 15801', phone: '01-234-5678', hours: 'Lun-Sab 5:00am - 10:00pm', services: ['Musculación', 'Cardio', 'Funcional', 'Pilates'], image: '/dist/assets/av san juan.PNG' },
+    { id: 2, name: 'RafaGym - Sede Pebal', address: 'Av Salvador Allende 314, Lima 15043', phone: '01-345-6789', hours: 'Lun-Sab 5:00am - 10:00pm', services: ['Musculación', 'Cardio', 'Danza', 'Aeróbicos'], image: '/dist/assets/PEBAL.png' },
+    { id: 3, name: 'RafaGym - Sede Parque 12', address: 'Mz.Ñ4 Lt 8-9 calle apurimac Sector, S.J.M 14804', phone: '01-456-7890', hours: 'Lun-Sab 6:00am - 9:00pm', services: ['Musculación', 'Cardio', 'Funcional'], image: '/dist/assets/12 NOV.PNG' }
+]
 
 export default function Home() {
     return (
@@ -12,7 +23,7 @@ export default function Home() {
                 </div>
                 <div className="container hero-content">
                     <div className="hero-text animate-slide-up">
-                        <div className="hero-badge">🔥 Más de 1,000 clientes activos</div>
+                        <div className="hero-badge"> Más de 200 clientes activos</div>
                         <h1 className="hero-title">
                             Transforma tu <span className="gradient-text">cuerpo</span> y tu <span className="gradient-text">vida</span>
                         </h1>
@@ -52,7 +63,7 @@ export default function Home() {
                     <div className="hero-visual animate-fade-in">
                         <div className="hero-image-card glass">
                             <div className="hero-image-placeholder">
-                                <span>🏋️‍♂️</span>
+                                <img src="/dist/assets/Captura.PNG" alt="Hombre levantando pesas" className="hero-image" />
                             </div>
                         </div>
                     </div>
@@ -126,10 +137,10 @@ export default function Home() {
                         <p className="section-subtitle">3 ubicaciones estratégicas para que entrenes cerca de ti</p>
                     </div>
                     <div className="locations-grid">
-                        {LOCATIONS.map((loc, i) => (
+                        {LOCATIONS.map((loc) => (
                             <div key={loc.id} className="location-card card">
                                 <div className="location-image-placeholder">
-                                    <span>🏢</span>
+                                    <img src={loc.image} alt={loc.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
                                 <div className="location-info">
                                     <h3 className="location-name">{loc.name}</h3>
@@ -149,7 +160,7 @@ export default function Home() {
             </section>
 
             {/* ─── Products Section ─── */}
-            <section className="section section-dark" id="productos">
+            {/*<section className="section section-dark" id="productos">
                 <div className="container">
                     <div className="section-header">
                         <h2 className="section-title">Nuestros <span className="gradient-text">Productos</span></h2>
