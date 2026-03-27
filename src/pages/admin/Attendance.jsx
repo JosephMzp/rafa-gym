@@ -166,6 +166,7 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
 
     // Validation
     const membershipName = selectedClient?.membership_type?.name
+    const hasActiveMembership = !!selectedClient?.membership_type
     const isBasic = membershipName === 'Estándar'
     const isFitOrGold = membershipName === 'Fit' || membershipName === 'Gold'
     const canSelectLocation = isFitOrGold
@@ -187,7 +188,7 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
         ? selectedLocationId !== selectedClient.location.id
         : false
 
-    const canSubmit = selectedClient && selectedLocationId && !limitReached && !wrongLocation && !submitting
+    const canSubmit = selectedClient && selectedLocationId && hasActiveMembership && !limitReached && !wrongLocation && !submitting
 
     const handleSubmit = async () => {
         if (!canSubmit) return
@@ -360,6 +361,24 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                         )}
 
                         {/* Warnings & Validations */}
+                        {selectedClient && !hasActiveMembership && (
+                            <div style={{
+                                padding: 'var(--space-md)', borderRadius: 'var(--radius-lg)',
+                                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                display: 'flex', alignItems: 'center', gap: '0.75rem'
+                            }}>
+                                <FiAlertCircle size={20} color="var(--danger)" />
+                                <div>
+                                    <div style={{ fontWeight: 600, color: 'var(--danger)', fontSize: '0.875rem' }}>
+                                        Sin membresía activa
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        {selectedClient.name} no tiene una membresía activa. Registra un pago de membresía antes de permitir el ingreso.
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {selectedClient && limitReached && (
                             <div style={{
                                 padding: 'var(--space-md)', borderRadius: 'var(--radius-lg)',

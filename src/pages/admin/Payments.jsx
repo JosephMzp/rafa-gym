@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FiPlus, FiSearch, FiX, FiDollarSign, FiAlertTriangle, FiAlertCircle } from 'react-icons/fi'
-import { getPayments, getClients, getMembershipTypes, getClasses, createPayment } from '../../lib/services'
+import { getPayments, getClients, getMembershipTypes, getClasses, createPayment, createClientMembership } from '../../lib/services'
 
 export default function Payments() {
     const [payments, setPayments] = useState([])
@@ -46,6 +46,19 @@ export default function Payments() {
                 next_due: form.next_due || null,
                 status: 'paid'
             })
+
+            // Si es pago de membresía, crear / activar la membresía del cliente
+            const isMembership = form.concept === 'Mensualidad' || form.concept === 'Renovación'
+            if (isMembership && form.membership_type_id && form.date && form.next_due) {
+                await createClientMembership({
+                    client_id: form.client_id,
+                    membership_type_id: form.membership_type_id,
+                    start_date: form.date,
+                    end_date: form.next_due,
+                    status: 'active'
+                })
+            }
+
             await loadData()
             setShowModal(false)
         } catch (err) { console.error(err) }
@@ -109,8 +122,22 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
     const activeClients = clients.filter(c => c.status === 'active')
     const activeClasses = classes.filter(c => c.status === 'active')
 
+    // Client search state
+    const [clientSearch, setClientSearch] = useState('')
+    const [showClientDropdown, setShowClientDropdown] = useState(false)
+    const [pickedClient, setPickedClient] = useState(null)
+    const clientSearchRef = useRef(null)
+
+    const clientSuggestions = clientSearch.length > 0
+        ? activeClients.filter(c =>
+            c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+            c.document?.includes(clientSearch) ||
+            c.email?.toLowerCase().includes(clientSearch.toLowerCase())
+        ).slice(0, 8)
+        : []
+
     const [form, setForm] = useState({
-        client_id: activeClients[0]?.id || '',
+        client_id: '',
         concept: 'Mensualidad',
         membership_type_id: membershipTypes[0]?.id || '',
         membership_type_name: membershipTypes[0]?.name || '',
@@ -119,8 +146,34 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
         amount: membershipTypes[0]?.price?.toString() || '',
         method: 'Efectivo',
         date: new Date().toISOString().split('T')[0],
-        next_due: ''
+        next_due: (() => {
+            if (!membershipTypes[0]) return ''
+            const d = new Date()
+            d.setDate(d.getDate() + (membershipTypes[0].duration_days || 30))
+            return d.toISOString().split('T')[0]
+        })()
     })
+
+    const selectClient = (client) => {
+        setPickedClient(client)
+        setClientSearch(client.name)
+        setShowClientDropdown(false)
+        setForm(prev => {
+            const updated = { ...prev, client_id: client.id }
+            // Re‑check free classes if concept is Clase Grupal
+            if (prev.concept === 'Clase Grupal') {
+                const m = client?.membership_type?.name
+                if (m === 'Fit' || m === 'Gold') updated.amount = '0'
+            }
+            return updated
+        })
+    }
+
+    const clearClient = () => {
+        setPickedClient(null)
+        setClientSearch('')
+        setForm(prev => ({ ...prev, client_id: '' }))
+    }
 
     const isMembershipConcept = form.concept === 'Mensualidad' || form.concept === 'Renovación'
     const isClassConcept = form.concept === 'Clase Grupal'
@@ -225,20 +278,95 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
                 <div className="modal-body">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
 
-                        {/* Cliente */}
-                        <div className="form-group">
+                        {/* Cliente — buscador */}
+                        <div className="form-group" style={{ position: 'relative' }}>
                             <label className="form-label">Cliente *</label>
-                            <select className="form-input" value={form.client_id} onChange={e => handleChange('client_id', e.target.value)}>
-                                {activeClients.map(c => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.name} {c.membership_type ? `(${c.membership_type.name})` : '(Sin membresía)'}
-                                    </option>
-                                ))}
-                            </select>
-                            {selectedClient?.membership_type && (
-                                <span style={{ fontSize: '0.75rem', color: selectedClient.membership_type.color || 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    {selectedClient.membership_type.icon} Membresía: <strong>{selectedClient.membership_type.name}</strong>
-                                </span>
+                            {pickedClient ? (
+                                <div style={{
+                                    padding: 'var(--space-md)', borderRadius: 'var(--radius-lg)',
+                                    background: 'var(--dark-600)', border: '1px solid var(--border-subtle)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div className="avatar" style={{ width: 40, height: 40, fontSize: '0.875rem' }}>
+                                            {pickedClient.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 700 }}>{pickedClient.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                {pickedClient.document} • {pickedClient.email}
+                                            </div>
+                                            {pickedClient.membership_type && (
+                                                <span style={{ fontSize: '0.75rem', color: pickedClient.membership_type.color || 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.125rem' }}>
+                                                    {pickedClient.membership_type.icon} <strong>{pickedClient.membership_type.name}</strong>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button className="btn btn-ghost btn-icon" onClick={clearClient} title="Cambiar cliente"><FiX size={16} /></button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="search-bar">
+                                        <span className="search-bar-icon"><FiSearch /></span>
+                                        <input
+                                            ref={clientSearchRef}
+                                            placeholder="Buscar por nombre, documento o email..."
+                                            value={clientSearch}
+                                            onChange={e => { setClientSearch(e.target.value); setShowClientDropdown(true) }}
+                                            onFocus={() => setShowClientDropdown(true)}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    {showClientDropdown && clientSuggestions.length > 0 && (
+                                        <div style={{
+                                            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                                            background: 'var(--dark-700)', border: '1px solid var(--border-subtle)',
+                                            borderRadius: 'var(--radius-lg)', marginTop: '0.25rem',
+                                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)', maxHeight: '280px', overflowY: 'auto'
+                                        }}>
+                                            {clientSuggestions.map(c => (
+                                                <button
+                                                    key={c.id}
+                                                    onClick={() => selectClient(c)}
+                                                    style={{
+                                                        width: '100%', padding: 'var(--space-md)', border: 'none',
+                                                        background: 'transparent', cursor: 'pointer',
+                                                        display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                                        textAlign: 'left', color: 'var(--text-primary)',
+                                                        transition: 'background 0.15s',
+                                                        borderBottom: '1px solid var(--border-subtle)'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = 'var(--dark-600)'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                >
+                                                    <div className="avatar" style={{ width: 34, height: 34, fontSize: '0.75rem', flexShrink: 0 }}>{c.name.charAt(0)}</div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{c.name}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.document} • {c.email}</div>
+                                                    </div>
+                                                    <span className="badge" style={{
+                                                        background: `${c.membership_type?.color || '#94a3b8'}20`,
+                                                        color: c.membership_type?.color || '#94a3b8', flexShrink: 0
+                                                    }}>
+                                                        {c.membership_type?.icon} {c.membership_type?.name || 'Sin membresía'}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {showClientDropdown && clientSearch.length > 0 && clientSuggestions.length === 0 && (
+                                        <div style={{
+                                            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                                            background: 'var(--dark-700)', border: '1px solid var(--border-subtle)',
+                                            borderRadius: 'var(--radius-lg)', marginTop: '0.25rem',
+                                            padding: 'var(--space-lg)', textAlign: 'center',
+                                            color: 'var(--text-muted)', fontSize: '0.875rem'
+                                        }}>
+                                            No se encontraron clientes activos
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
 
