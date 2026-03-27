@@ -7,9 +7,9 @@ var MEMBERSHIP_TYPES = [
 ]
 
 var LOCATIONS = [
-    { id: 1, name: 'RafaGym - Sede Av. San Juan', address: 'Av. Guillermo Billinghurst 497, S.J.M 15801', phone: '01-234-5678', hours: 'Lun-Sab 5:00am - 10:00pm', services: ['Musculación', 'Cardio', 'Funcional', 'Pilates'], image: '/public/av san juan.PNG' },
-    { id: 2, name: 'RafaGym - Sede Pebal', address: 'Av Salvador Allende 314, Lima 15043', phone: '01-345-6789', hours: 'Lun-Sab 5:00am - 10:00pm', services: ['Musculación', 'Cardio', 'Danza', 'Aeróbicos'], image: '/public/PEBAL.png' },
-    { id: 3, name: 'RafaGym - Sede Parque 12', address: 'Mz.Ñ4 Lt 8-9 calle apurimac Sector, S.J.M 14804', phone: '01-456-7890', hours: 'Lun-Sab 6:00am - 9:00pm', services: ['Musculación', 'Cardio', 'Funcional'], image: '/public/12 NOV.PNG' }
+    { id: 1, name: 'RafaGym - Sede Av. San Juan', address: 'Av. Guillermo Billinghurst 497, S.J.M 15801', phone: '01-234-5678', hours: 'Lun-Sab 5:00am - 10:00pm', services: ['Musculación', 'Cardio', 'Funcional', 'Pilates'], image: './public/av san juan.PNG' },
+    { id: 2, name: 'RafaGym - Sede Pebal', address: 'Av Salvador Allende 314, Lima 15043', phone: '01-345-6789', hours: 'Lun-Sab 5:00am - 10:00pm', services: ['Musculación', 'Cardio', 'Danza', 'Aeróbicos'], image: './public/PEBAL.png' },
+    { id: 3, name: 'RafaGym - Sede Parque 12', address: 'Mz.Ñ4 Lt 8-9 calle apurimac Sector, S.J.M 14804', phone: '01-456-7890', hours: 'Lun-Sab 6:00am - 9:00pm', services: ['Musculación', 'Cardio', 'Funcional'], image: './public/12 NOV.PNG' }
 ]
 
 export default function Home() {
@@ -63,7 +63,7 @@ export default function Home() {
                     <div className="hero-visual animate-fade-in">
                         <div className="hero-image-card glass">
                             <div className="hero-image-placeholder">
-                                <img src="/public/Captura.PNG" alt="Hombre levantando pesas" className="hero-image" />
+                                <img src="./public/Captura.PNG" alt="Hombre levantando pesas" className="hero-image" />
                             </div>
                         </div>
                     </div>
