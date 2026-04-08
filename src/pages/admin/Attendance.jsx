@@ -64,7 +64,6 @@ export default function Attendance() {
                 </div>
             </div>
 
-            {/* Filters */}
             <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
                 <div className="search-bar" style={{ flex: 1 }}>
                     <span className="search-bar-icon"><FiSearch /></span>
@@ -79,7 +78,7 @@ export default function Attendance() {
                 </div>
             </div>
 
-            {/* Table */}
+            {/* Tabla */}
             <div className="table-container">
                 <table className="table">
                     <thead><tr><th>Cliente</th><th>Membresía</th><th>Sede</th><th>Fecha</th><th>Hora</th></tr></thead>
@@ -103,7 +102,7 @@ export default function Attendance() {
                 {filtered.length === 0 && <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-title">No hay registros de asistencia</div></div>}
             </div>
 
-            {/* Registration Modal */}
+            {/* Registro de asistencia */}
             {showModal && (
                 <AttendanceModal
                     clients={allClients}
@@ -147,10 +146,8 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
 
         const membershipName = client.membership_type?.name
         if (membershipName === 'Estándar') {
-            // Estándar: auto-assign their registered location
             setSelectedLocationId(client.location?.id || '')
         } else if (membershipName === 'Fit' || membershipName === 'Gold') {
-            // Fit/Gold: default to first location, user can change
             setSelectedLocationId(locations[0]?.id || '')
         } else {
             setSelectedLocationId(client.location?.id || locations[0]?.id || '')
@@ -164,14 +161,12 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
         setResult(null)
     }
 
-    // Validation
     const membershipName = selectedClient?.membership_type?.name
     const hasActiveMembership = !!selectedClient?.membership_type
     const isBasic = membershipName === 'Estándar'
     const isFitOrGold = membershipName === 'Fit' || membershipName === 'Gold'
     const canSelectLocation = isFitOrGold
 
-    // Check daily attendance limit
     const todayAttCount = selectedClient
         ? attendances.filter(a => a.client_id === selectedClient.id && a.date === todayStr).length
         : 0
@@ -179,11 +174,10 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
     let maxPerDay = null
     if (isBasic) maxPerDay = 1
     if (membershipName === 'Fit') maxPerDay = 1
-    if (membershipName === 'Gold') maxPerDay = null // Unlimited
+    if (membershipName === 'Gold') maxPerDay = null // ilimitado
 
     const limitReached = maxPerDay !== null && todayAttCount >= maxPerDay
 
-    // Location validation for basic membership
     const wrongLocation = isBasic && selectedLocationId && selectedClient?.location?.id
         ? selectedLocationId !== selectedClient.location.id
         : false
@@ -214,7 +208,6 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                 <div className="modal-body">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
 
-                        {/* Date & Time - Auto */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
                             <div className="form-group">
                                 <label className="form-label">📅 Fecha</label>
@@ -231,11 +224,9 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                             La fecha y hora se asignan automáticamente al momento del registro
                         </span>
 
-                        {/* Client Search */}
                         <div className="form-group" style={{ position: 'relative' }}>
                             <label className="form-label">Buscar Cliente *</label>
                             {selectedClient ? (
-                                // Selected client card
                                 <div style={{
                                     padding: 'var(--space-md)', borderRadius: 'var(--radius-lg)',
                                     background: 'var(--dark-600)', border: '1px solid var(--border-subtle)',
@@ -264,7 +255,6 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                                     </button>
                                 </div>
                             ) : (
-                                // Search input with dropdown
                                 <>
                                     <div className="search-bar">
                                         <span className="search-bar-icon"><FiSearch /></span>
@@ -326,12 +316,10 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                             )}
                         </div>
 
-                        {/* Location Selection - Only shows after client is selected */}
                         {selectedClient && (
                             <div className="form-group">
                                 <label className="form-label"><FiMapPin size={14} style={{ marginRight: '0.25rem' }} /> Sede de Ingreso *</label>
                                 {canSelectLocation ? (
-                                    // Fit/Gold: can choose any location
                                     <>
                                         <select className="form-input" value={selectedLocationId} onChange={e => setSelectedLocationId(e.target.value)}>
                                             {locations.map(l => (
@@ -343,7 +331,6 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                                         </span>
                                     </>
                                 ) : (
-                                    // Estándar: locked to their registered location
                                     <>
                                         <input
                                             className="form-input"
@@ -360,7 +347,6 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                             </div>
                         )}
 
-                        {/* Warnings & Validations */}
                         {selectedClient && !hasActiveMembership && (
                             <div style={{
                                 padding: 'var(--space-md)', borderRadius: 'var(--radius-lg)',
@@ -417,14 +403,12 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                             </div>
                         )}
 
-                        {/* Success / Error result */}
                         {result && (
                             <div className={`alert alert-${result.type === 'success' ? 'success' : 'danger'}`}>
                                 {result.message}
                             </div>
                         )}
 
-                        {/* Daily attendance summary for the selected client */}
                         {selectedClient && todayAttCount > 0 && !limitReached && (
                             <div style={{
                                 padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-md)',

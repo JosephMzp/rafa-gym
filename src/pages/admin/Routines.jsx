@@ -114,7 +114,6 @@ export default function Routines() {
                 </div>
             </div>
 
-            {/* Filters */}
             <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)', flexWrap: 'wrap' }}>
                 <div className="search-bar" style={{ flex: 1 }}>
                     <span className="search-bar-icon"><FiSearch /></span>
@@ -133,7 +132,6 @@ export default function Routines() {
                 </div>
             </div>
 
-            {/* Routines grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 'var(--space-lg)' }}>
                 {filtered.map(function (r) {
                     var lColor = levelColor[r.level] || '#94a3b8'
@@ -199,7 +197,6 @@ export default function Routines() {
                 </div>
             )}
 
-            {/* ===== Detail Modal ===== */}
             {viewing && (
                 <DetailModal routine={viewing} exercises={viewExercises}
                     onClose={function () { setViewing(null); setViewExercises([]) }}
@@ -207,7 +204,6 @@ export default function Routines() {
                 />
             )}
 
-            {/* ===== Create/Edit Modal ===== */}
             {showForm && (
                 <FormModal
                     routine={editing}
@@ -219,9 +215,6 @@ export default function Routines() {
     )
 }
 
-// ======================================
-// DETAIL MODAL
-// ======================================
 function DetailModal(props) {
     var routine = props.routine
     var exercises = props.exercises
@@ -229,7 +222,6 @@ function DetailModal(props) {
     var onEdit = props.onEdit
     var lColor = levelColor[routine.level] || '#94a3b8'
 
-    // Group exercises by day
     var byDay = {}
     exercises.forEach(function (ex) {
         var day = ex.day || 'Sin dia'
@@ -245,7 +237,6 @@ function DetailModal(props) {
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
                 <div className="modal-body">
-                    {/* Info grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
                         <div className="form-group"><span className="form-label">Cliente</span><span style={{ fontWeight: 600 }}>{routine.client_name}</span></div>
                         <div className="form-group"><span className="form-label">Entrenador</span><span style={{ fontWeight: 500 }}>{routine.trainer_name || routine.trainer}</span></div>
@@ -262,7 +253,6 @@ function DetailModal(props) {
                         </div>
                     </div>
 
-                    {/* Exercises by day */}
                     <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 'var(--space-md)' }}>Ejercicios por dia</h3>
                     {Object.keys(byDay).length === 0 && (
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No hay ejercicios asignados</p>
@@ -308,9 +298,6 @@ function DetailModal(props) {
     )
 }
 
-// ======================================
-// FORM MODAL (Create / Edit)
-// ======================================
 function FormModal(props) {
     var routine = props.routine
     var onSave = props.onSave
@@ -438,7 +425,6 @@ function FormModal(props) {
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
                 <div className="modal-body">
-                    {/* Basic info */}
                     <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Cliente *</label>
@@ -479,7 +465,6 @@ function FormModal(props) {
                         </div>
                     </div>
 
-                    {/* Days selection */}
                     <div className="form-group" style={{ marginTop: 'var(--space-md)' }}>
                         <label className="form-label">Dias de Entrenamiento</label>
                         <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
@@ -497,7 +482,6 @@ function FormModal(props) {
                         </div>
                     </div>
 
-                    {/* Exercises section */}
                     <div style={{ marginTop: 'var(--space-xl)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-lg)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
                             <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Ejercicios de la Rutina ({exList.length})</h3>

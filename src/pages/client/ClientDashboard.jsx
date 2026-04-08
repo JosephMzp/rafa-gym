@@ -120,7 +120,7 @@ export default function ClientDashboard() {
         try {
             var clientId = user.id
 
-            // Membership
+            // membresia
             var memRes = await supabase
                 .from('client_memberships')
                 .select('*, membership_type:membership_types(id, name, price)')
@@ -129,13 +129,13 @@ export default function ClientDashboard() {
                 .single()
             if (memRes.data) setMembership(memRes.data)
 
-            // Location
+            // sede
             if (user.location_id) {
                 var locRes = await supabase.from('locations').select('*').eq('id', user.location_id).single()
                 if (locRes.data) setLocation(locRes.data)
             }
 
-            // Attendances (last 8)
+            // asistencias
             var attRes = await supabase
                 .from('attendances')
                 .select('*, location:locations(name)')
@@ -144,7 +144,7 @@ export default function ClientDashboard() {
                 .limit(8)
             setAttendances(attRes.data || [])
 
-            // Payments (last 5)
+            // pagos
             var payRes = await supabase
                 .from('payments')
                 .select('*')
@@ -153,7 +153,7 @@ export default function ClientDashboard() {
                 .limit(5)
             setPayments(payRes.data || [])
 
-            // Routine
+            // rutina
             var routRes = await supabase
                 .from('routines')
                 .select('*, routine_exercises(*, exercises(name, muscle_group))')
@@ -162,7 +162,7 @@ export default function ClientDashboard() {
                 .single()
             if (routRes.data) setRoutine(routRes.data)
 
-            // Enrolled classes
+            // clases inscritas
             var clsRes = await supabase
                 .from('class_enrollments')
                 .select('*, class:classes(name, instructor, schedule)')
@@ -170,7 +170,7 @@ export default function ClientDashboard() {
                 .eq('status', 'active')
             setClasses(clsRes.data || [])
 
-            // All available active classes (for self-enrollment)
+            // todas las clases activas
             var allClsRes = await supabase
                 .from('classes')
                 .select('*, location:locations(name), class_enrollments(id, client_id)')
@@ -226,7 +226,6 @@ export default function ClientDashboard() {
         finally { setUploading(false) }
     }
 
-    // Computed values
     var daysLeft = 0
     if (membership && membership.end_date) {
         daysLeft = Math.max(0, Math.ceil((new Date(membership.end_date) - new Date()) / (1000 * 60 * 60 * 24)))
@@ -245,7 +244,6 @@ export default function ClientDashboard() {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--dark-900)' }}>
-            {/* Top nav */}
             <nav className="glass" style={{
                 padding: '0.75rem var(--space-xl)', display: 'flex', justifyContent: 'space-between',
                 alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', position: 'sticky', top: 0, zIndex: 50
@@ -284,7 +282,6 @@ export default function ClientDashboard() {
             </nav>
 
             <div style={{ padding: 'var(--space-xl) var(--space-lg)', maxWidth: 1100, margin: '0 auto' }}>
-                {/* Success message */}
                 {message && (
                     <div style={{
                         padding: '0.75rem 1rem', borderRadius: 'var(--radius-lg)',
@@ -296,12 +293,11 @@ export default function ClientDashboard() {
                     </div>
                 )}
 
-                {/* Hero section with profile photo */}
+
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: 'var(--space-xl)',
                     marginBottom: 'var(--space-2xl)', flexWrap: 'wrap'
                 }}>
-                    {/* Photo */}
                     <div style={{ position: 'relative' }}>
                         <div
                             onClick={function () { if (!uploading && fileRef.current) fileRef.current.click() }}
@@ -359,7 +355,6 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* Membership Card */}
                 <div className="card" style={{
                     marginBottom: 'var(--space-xl)',
                     background: 'linear-gradient(135deg, ' + membershipColor + '15, ' + membershipColor + '05)',
@@ -398,7 +393,7 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* ═══ CALENDAR (Weekly / Monthly) ═══ */}
+                {/* ═══ CALENDARIO (Semanal / Mensual) ═══ */}
                 {(function () {
                     var today = new Date()
                     var calMonth = calendarMonth || new Date(today.getFullYear(), today.getMonth(), 1)
@@ -407,7 +402,7 @@ export default function ClientDashboard() {
                     var monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
                     var calView = calendarView || 'weekly'
 
-                    // ── helpers ──────────────────────────────────────────────────────
+
                     function getDow(dt) { var js = dt.getDay(); return js === 0 ? 6 : js - 1 } // Mon=0…Sun=6
 
                     function getTimeMinutes(scheduleStr) {
@@ -424,7 +419,6 @@ export default function ClientDashboard() {
                     }
 
                     function renderDayCell(opts) {
-                        // opts: { dayLabel, dayNum, isToday, isWeekend, weekDayName, isCurrentMonth=true, isPad=false }
                         if (opts.isPad) return (
                             <div style={{ minHeight: calView === 'weekly' ? 110 : 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)', background: 'var(--dark-700)', opacity: 0.25 }}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opts.dayNum}</span>
@@ -484,7 +478,6 @@ export default function ClientDashboard() {
                         )
                     }
 
-                    // ── WEEKLY view: compute the 7 days of the current week ──────────
                     function renderWeekly() {
                         var todayDow = getDow(today) // 0=Mon
                         var weekStart = new Date(today)
@@ -513,7 +506,7 @@ export default function ClientDashboard() {
                         )
                     }
 
-                    // ── MONTHLY view ─────────────────────────────────────────────────
+
                     function renderMonthly() {
                         var firstDay = new Date(year, month, 1)
                         var totalDays = new Date(year, month + 1, 0).getDate()
@@ -561,10 +554,8 @@ export default function ClientDashboard() {
                                     )}
                                 </h3>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {/* Semanal/Mensual toggle */}
                                     <button onClick={function () { setCalendarView('weekly') }} style={calView === 'weekly' ? btnActive : btnInactive}>Semanal</button>
                                     <button onClick={function () { setCalendarView('monthly') }} style={calView === 'monthly' ? btnActive : btnInactive}>Mensual</button>
-                                    {/* Month nav (only in monthly view) */}
                                     {calView === 'monthly' && (
                                         <>
                                             <button onClick={function () { setCalendarMonth(new Date(year, month - 1, 1)) }} className="btn btn-ghost btn-icon" style={{ width: 32, height: 32 }}>{'‹'}</button>
@@ -577,7 +568,7 @@ export default function ClientDashboard() {
 
                             {calView === 'weekly' ? renderWeekly() : renderMonthly()}
 
-                            {/* Legend */}
+
                             <div style={{ display: 'flex', gap: 'var(--space-lg)', marginTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)', flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                     <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(249,115,22,0.3)' }} /> Rutina programada
@@ -595,7 +586,6 @@ export default function ClientDashboard() {
                 var today = new Date()
                 var calMonth = calendarMonth || new Date(today.getFullYear(), today.getMonth(), 1)
 
-                {/* Stats Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
                     <div className="stat-card">
                         <div className="stat-card-icon" style={{ background: 'rgba(249,115,22,0.12)', color: 'var(--primary-400)' }}><FiCalendar /></div>
@@ -629,9 +619,7 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* Two columns */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                    {/* Attendances */}
                     <div className="card">
                         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FiCalendar color="var(--primary-400)" /> Ultimas Asistencias
@@ -662,7 +650,7 @@ export default function ClientDashboard() {
                         )}
                     </div>
 
-                    {/* Routine */}
+                    {/* Rutina */}
                     <div className="card">
                         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FiActivity color="var(--primary-400)" /> Mi Rutina
@@ -689,7 +677,7 @@ export default function ClientDashboard() {
                                         })}
                                     </div>
                                 </div>
-                                {/* Exercise list */}
+                                {/* Ejercicios*/}
                                 {routine.routine_exercises && routine.routine_exercises.length > 0 && (
                                     <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
                                         <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
@@ -723,9 +711,7 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* Bottom row: Payments + Classes + Personal data */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                    {/* Payments */}
                     <div className="card">
                         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FiDollarSign color="var(--success)" /> Ultimos Pagos
@@ -754,7 +740,6 @@ export default function ClientDashboard() {
                         )}
                     </div>
 
-                    {/* Enrolled classes */}
                     <div className="card">
                         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FiBookOpen color="#8b5cf6" /> Mis Clases
@@ -784,7 +769,6 @@ export default function ClientDashboard() {
                     </div>
                 </div>
 
-                {/* ═══ SELF-ENROLLMENT (Fit / Gold only) ═══ */}
                 {(membershipName === 'Fit' || membershipName === 'Gold') && (function () {
                     var isFitGold = true
 

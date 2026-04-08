@@ -20,7 +20,6 @@ export default function Reports() {
 
     if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>
 
-    // Monthly revenue
     const monthlyRevenue = []
     for (let i = 5; i >= 0; i--) {
         const d = new Date(); d.setMonth(d.getMonth() - i)
@@ -30,19 +29,16 @@ export default function Reports() {
         monthlyRevenue.push({ month: label.charAt(0).toUpperCase() + label.slice(1), revenue: rev })
     }
 
-    // Location revenue
     const locationRevenue = locations.map(l => {
         const locClients = clients.filter(c => c.location?.id === l.id)
         const rev = payments.filter(p => locClients.some(c => c.id === p.client_id) && p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0)
         return { name: l.name.replace('RafaGym - ', ''), revenue: rev }
     })
 
-    // Membership distribution
     const membershipDist = membershipTypes.map(mt => ({
         name: mt.name, value: clients.filter(c => c.membership_type?.id === mt.id && c.status === 'active').length, color: mt.color
     }))
 
-    // Weekly attendance
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab']
     const weeklyAttendance = [1, 2, 3, 4, 5, 6].map(dayNum => ({
         day: dayNames[dayNum % 7], count: attendances.filter(a => { const d = new Date(a.check_in || a.date); return d.getDay() === dayNum % 7 }).length

@@ -5,8 +5,8 @@ import { getClasses, getClassEnrollments, enrollClientInClass, unenrollClient, g
 export default function Classes() {
     var _classes = useState([])
     var _loading = useState(true)
-    var _enrollModal = useState(null)   // class being enrolled into
-    var _viewModal = useState(null)     // class being viewed
+    var _enrollModal = useState(null)
+    var _viewModal = useState(null)
     var _enrollments = useState([])
     var _fitGoldClients = useState([])
     var _enrollSearch = useState('')
@@ -88,7 +88,6 @@ export default function Classes() {
         } catch (err) { console.error(err) }
     }
 
-    // Filter clients not already enrolled
     var enrolledIds = enrollments.map(function (e) { return e.client_id })
     var availableClients = fitGoldClients.filter(function (c) {
         var notEnrolled = enrolledIds.indexOf(c.id) === -1
@@ -136,7 +135,6 @@ export default function Classes() {
                                 </div>
                             </div>
 
-                            {/* Occupancy bar */}
                             <div style={{ marginBottom: 'var(--space-md)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>Ocupacion</span>
@@ -151,7 +149,6 @@ export default function Classes() {
                                 </div>
                             </div>
 
-                            {/* Price info */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', paddingBottom: 'var(--space-md)', borderBottom: '1px solid var(--border-subtle)' }}>
                                 <div>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Precio Estandar: </span>
@@ -160,7 +157,6 @@ export default function Classes() {
                                 <span className="badge badge-info">Fit/Gold: Gratis</span>
                             </div>
 
-                            {/* Action buttons */}
                             <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
                                 <button className="btn btn-sm btn-ghost" style={{ flex: 1 }} onClick={function () { openViewModal(cls) }}>
                                     <FiEye size={14} /> Ver Inscritos
@@ -175,7 +171,6 @@ export default function Classes() {
                 })}
             </div>
 
-            {/* ========== ENROLL MODAL ========== */}
             {enrollModal && (
                 <div className="modal-overlay" onClick={function () { setEnrollModal(null) }}>
                     <div className="modal modal-lg" onClick={function (e) { e.stopPropagation() }} style={{ maxWidth: 560, maxHeight: '85vh', overflow: 'auto' }}>
@@ -193,7 +188,6 @@ export default function Classes() {
                                 <div style={{ textAlign: 'center', padding: '2rem' }}><div className="spinner spinner-lg"></div></div>
                             ) : (
                                 <>
-                                    {/* Currently enrolled */}
                                     {enrollments.length > 0 && (
                                         <div style={{ marginBottom: 'var(--space-xl)' }}>
                                             <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 'var(--space-md)' }}>
@@ -223,7 +217,6 @@ export default function Classes() {
                                         </div>
                                     )}
 
-                                    {/* Search and add */}
                                     <div>
                                         <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 'var(--space-md)' }}>
                                             Agregar Cliente Fit/Gold
@@ -280,7 +273,6 @@ export default function Classes() {
                 </div>
             )}
 
-            {/* ========== VIEW ENROLLED MODAL ========== */}
             {viewModal && (
                 <div className="modal-overlay" onClick={function () { setViewModal(null) }}>
                     <div className="modal" onClick={function (e) { e.stopPropagation() }} style={{ maxWidth: 480 }}>

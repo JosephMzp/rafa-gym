@@ -104,7 +104,6 @@ export default function Exercises() {
                 </button>
             </div>
 
-            {/* Muscle group filter pills */}
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
                 <button
                     className={'btn btn-sm ' + (filterGroup === 'all' ? 'btn-primary' : 'btn-secondary')}
@@ -124,7 +123,6 @@ export default function Exercises() {
                 })}
             </div>
 
-            {/* Search bar */}
             <div style={{ marginBottom: 'var(--space-xl)' }}>
                 <div className="search-bar">
                     <span className="search-bar-icon"><FiSearch /></span>
@@ -133,7 +131,6 @@ export default function Exercises() {
                 </div>
             </div>
 
-            {/* Cards grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-lg)' }}>
                 {filtered.map(function (exercise) {
                     var color = muscleColor[exercise.muscle_group] || '#94a3b8'
@@ -142,7 +139,6 @@ export default function Exercises() {
                         <div key={exercise.id} className="card" style={{
                             overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column'
                         }}>
-                            {/* Image area */}
                             <div style={{
                                 height: 160,
                                 background: exercise.image_url
@@ -162,7 +158,6 @@ export default function Exercises() {
                                 </span>
                             </div>
 
-                            {/* Content */}
                             <div style={{ padding: 'var(--space-md)', flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <h3 style={{ fontWeight: 700, fontSize: '1.0625rem', marginBottom: '0.375rem' }}>
                                     {exercise.name}
@@ -183,7 +178,6 @@ export default function Exercises() {
                                     </div>
                                 </div>
 
-                                {/* Action buttons */}
                                 <div style={{
                                     display: 'flex', gap: 'var(--space-sm)',
                                     borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-sm)'
@@ -207,7 +201,6 @@ export default function Exercises() {
                 })}
             </div>
 
-            {/* Empty state */}
             {filtered.length === 0 && (
                 <div className="empty-state">
                     <div className="empty-state-icon">{'🏋️'}</div>
@@ -216,7 +209,6 @@ export default function Exercises() {
                 </div>
             )}
 
-            {/* ============ Detail Modal ============ */}
             {viewingExercise && (
                 <div className="modal-overlay" onClick={function () { setViewingExercise(null) }}>
                     <div className="modal" onClick={function (e) { e.stopPropagation() }} style={{ maxWidth: 520 }}>
@@ -278,7 +270,6 @@ export default function Exercises() {
                 </div>
             )}
 
-            {/* ============ Create / Edit Modal ============ */}
             {showFormModal && (
                 <ExerciseFormModal
                     exercise={editingExercise}
@@ -290,10 +281,6 @@ export default function Exercises() {
     )
 }
 
-
-// ========================================================
-// Form Modal Component (create & edit)
-// ========================================================
 function ExerciseFormModal(props) {
     var exercise = props.exercise
     var onSave = props.onSave
@@ -330,12 +317,11 @@ function ExerciseFormModal(props) {
         if (file.size > 5 * 1024 * 1024) { setImgError('La imagen no puede superar 5MB'); return }
         setImgError(null)
 
-        // Local preview
         var reader = new FileReader()
         reader.onload = function (ev) { setPreview(ev.target.result) }
         reader.readAsDataURL(file)
 
-        // Upload to Cloudinary
+        //Cloudinary
         setUploading(true)
         try {
             var url = await uploadToCloudinary(file, 'rafagym/exercises')
@@ -439,7 +425,6 @@ function ExerciseFormModal(props) {
                             onChange={function (e) { handleFile(e.target.files[0]) }} />
                     </div>
 
-                    {/* Form fields */}
                     <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Nombre del Ejercicio *</label>

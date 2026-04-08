@@ -12,13 +12,11 @@ export function AuthProvider({ children }) {
         let mounted = true
         let initialDone = false
 
-        // Use onAuthStateChange as the SINGLE source of truth
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
                 console.log('[Auth] Event:', event, session?.user?.email || 'no user')
 
                 if (session?.user) {
-                    // Use setTimeout to avoid Supabase deadlock during init
                     setTimeout(async () => {
                         try {
                             const profile = await getUserProfile(session.user.id)
@@ -46,7 +44,6 @@ export function AuthProvider({ children }) {
             }
         )
 
-        // Safety timeout - if auth never resolves in 5 seconds, stop loading
         const timeout = setTimeout(() => {
             if (mounted && !initialDone) {
                 console.warn('[Auth] Timeout - forcing loading to false')

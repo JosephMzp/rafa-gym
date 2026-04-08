@@ -16,7 +16,6 @@ export async function logoutUser() {
 }
 
 export async function getUserProfile(userId) {
-    // Check staff first - staff.id IS the auth.users.id
     const { data: staffData, error: staffError } = await supabase
         .from('staff')
         .select('*, roles(name)')
@@ -37,7 +36,6 @@ export async function getUserProfile(userId) {
         }
     }
 
-    // Check clients - clients.user_id = auth.users.id
     const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('*')
@@ -94,7 +92,7 @@ export async function updateStaff(id, updates) {
 }
 
 // ============================================
-// LOCATIONS
+// sedes
 // ============================================
 export async function getLocations() {
     const { data, error } = await supabase.from('locations').select('*').order('name')
@@ -103,7 +101,7 @@ export async function getLocations() {
 }
 
 // ============================================
-// EXERCISES
+// ejercicios
 // ============================================
 export async function getExercises() {
     const { data, error } = await supabase.from('exercises').select('*').order('name')
@@ -132,7 +130,7 @@ export async function deleteExercise(id) {
 }
 
 // ============================================
-// MEMBERSHIP TYPES
+// MEMBRESIAS
 // ============================================
 export async function getMembershipTypes() {
     const { data, error } = await supabase.from('membership_types').select('*').order('price')
@@ -141,7 +139,7 @@ export async function getMembershipTypes() {
 }
 
 // ============================================
-// CLIENTS
+// CLIENTES
 // ============================================
 export async function getClients() {
     const { data, error } = await supabase
@@ -187,7 +185,7 @@ export async function deleteClient(id) {
 }
 
 // ============================================
-// CLIENT MEMBERSHIPS
+// MEMBRESÍAS DE CLIENTES
 // ============================================
 export async function createClientMembership(data) {
     const { data: result, error } = await supabase.from('client_memberships').insert(data).select().single()
@@ -196,7 +194,7 @@ export async function createClientMembership(data) {
 }
 
 // ============================================
-// PAYMENTS
+// PAGOS
 // ============================================
 export async function getPayments() {
     const { data, error } = await supabase
@@ -214,7 +212,7 @@ export async function createPayment(paymentData) {
 }
 
 // ============================================
-// ATTENDANCES
+// ASISTENCIAS
 // ============================================
 export async function getAttendances() {
     const { data, error } = await supabase
@@ -243,7 +241,7 @@ export async function createAttendance(data) {
 }
 
 // ============================================
-// GUESTS
+// INVITADOS
 // ============================================
 export async function getGuests() {
     const { data, error } = await supabase
@@ -267,7 +265,7 @@ export async function createGuest(guestData) {
 }
 
 // ============================================
-// CLASSES
+// CLASES
 // ============================================
 export async function getClasses() {
     const { data, error } = await supabase
@@ -346,7 +344,7 @@ export async function getFitGoldClients() {
 }
 
 // ==========================================
-// Dashboard Analytics Services
+// Dashboard
 // ==========================================
 
 export async function getActiveClientsWithMembershipView() {
@@ -368,7 +366,7 @@ export async function getMonthlyRevenueView() {
 }
 
 // ============================================
-// ROUTINES
+// RUTINAS
 // ============================================
 export async function getRoutines() {
     const { data, error } = await supabase
@@ -396,7 +394,6 @@ export async function updateRoutine(id, updates) {
 }
 
 export async function deleteRoutine(id) {
-    // First delete routine_exercises
     await supabase.from('routine_exercises').delete().eq('routine_id', id)
     const { error } = await supabase.from('routines').delete().eq('id', id)
     if (error) throw error
@@ -415,11 +412,9 @@ export async function getRoutineExercises(routineId) {
 }
 
 export async function saveRoutineExercises(routineId, exerciseList) {
-    // Delete existing
     await supabase.from('routine_exercises').delete().eq('routine_id', routineId)
     if (!exerciseList || exerciseList.length === 0) return []
-    // Insert new
-    const rows = exerciseList.map(function(ex, i) {
+    const rows = exerciseList.map(function (ex, i) {
         return {
             routine_id: routineId,
             exercise_id: ex.exercise_id,

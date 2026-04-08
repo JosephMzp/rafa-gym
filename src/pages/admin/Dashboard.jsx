@@ -10,7 +10,7 @@ import {
 } from '../../lib/services'
 
 export default function Dashboard() {
-    // ---- Raw Data State ----
+
     const [clientsView, setClientsView] = useState([])
     const [payments, setPayments] = useState([])
     const [attendances, setAttendances] = useState([])
@@ -19,7 +19,7 @@ export default function Dashboard() {
     const [memTypes, setMemTypes] = useState([])
     const [loading, setLoading] = useState(true)
 
-    // ---- Filters State ----
+
     const [filters, setFilters] = useState({
         location_id: 'all',
         date_range: 'este_mes', // 'hoy', 'semana', 'mes', 'todo'
@@ -53,7 +53,6 @@ export default function Dashboard() {
         fetchAll()
     }, [])
 
-    // ---- Date Helpers ----
     const now = new Date()
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const startOfWeek = new Date(startOfToday)
@@ -69,7 +68,6 @@ export default function Dashboard() {
         return true
     }
 
-    // ---- Computed Stats & Derived Data ----
     const computed = useMemo(() => {
         let fClients = clientsView.filter(c => {
             if (filters.location_id !== 'all' && c.location_id !== filters.location_id) return false
@@ -83,7 +81,6 @@ export default function Dashboard() {
         let fPayments = payments.filter(p => {
             if (p.status !== 'paid') return false
             if (!isWithinDateRange(p.date, filters.date_range)) return false
-            // Note: payments don't directly have location right now unless joined, we'll ignore location filter for raw payments or join roughly
             return true
         })
 
@@ -102,14 +99,10 @@ export default function Dashboard() {
         const monthRevenue = fPayments.reduce((acc, p) => acc + Number(p.amount), 0)
         const activeClients = fClients.filter(c => c.client_status === 'active').length
         const churnRisk = fClients.filter(c => c.estado_riesgo === 'expira_pronto').length
-        
-        // Aforo (no check_out today)
+
         const todayStr = new Date().toISOString().split('T')[0]
         const aforo = attendances.filter(a => a.check_in?.startsWith(todayStr) && !a.check_out && (filters.location_id === 'all' || a.location_id === filters.location_id)).length
 
-        // -- Charts Data --
-        
-        // 1. Monthly Revenue Trend
         const monthlyRevMap = {}
         payments.filter(p => p.status === 'paid').forEach(p => {
             if (!p.date) return
@@ -125,8 +118,6 @@ export default function Dashboard() {
             past6Months.push({ month: label.charAt(0).toUpperCase() + label.slice(1), revenue: monthlyRevMap[mStr] || 0 })
         }
 
-        // 2. Revenue by Membership Type (Donut)
-        // We'll estimate this by looking at clients active currently
         const memCountMap = {}
         fClients.forEach(c => {
             const name = c.membership_name || 'Sin plan'
@@ -137,15 +128,12 @@ export default function Dashboard() {
             return { name, value: count, fill: mt?.color || '#94a3b8' }
         })
 
-        // 3. Class Performance (Bar)
         const classPerfData = fClassStats.map(cs => ({
-            name: cs.class_name, 
+            name: cs.class_name,
             capacidad: cs.capacidad_maxima || 0,
             asistencias: cs.asistencia_promedio || 0
-        })).sort((a,b) => b.asistencias - a.asistencias).slice(0, 8)
+        })).sort((a, b) => b.asistencias - a.asistencias).slice(0, 8)
 
-        // 4. Heatmap Data (Hour vs Day)
-        // Days 1: Lunes -> 0: Domingo
         const heatmapMatrix = Array(7).fill(0).map(() => Array(24).fill(0))
         fAttendances.forEach(a => {
             if (!a.check_in) return
@@ -155,7 +143,6 @@ export default function Dashboard() {
             heatmapMatrix[day][hour]++
         })
 
-        // Format heatmap specifically for 6AM to 10PM (16 hours)
         const daysLabel = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
         const heatmapCells = []
         let maxHeat = 0
@@ -168,7 +155,6 @@ export default function Dashboard() {
             }
         }
 
-        // 5. Daily Attendances (LineChart)
         const dailyAttMap = {}
         fAttendances.forEach(a => {
             if (!a.check_in) return
@@ -211,34 +197,33 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Global Filters Bar */}
             <div className="card" style={{ marginBottom: 'var(--space-2xl)', padding: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-400)', fontWeight: 600, marginRight: '1rem' }}>
                     <FiFilter /> Filtros
                 </div>
-                
-                <select className="form-input" style={{ width: 'auto', minWidth: 150 }} 
-                    value={filters.location_id} onChange={(e) => setFilters(f => ({...f, location_id: e.target.value}))}>
+
+                <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
+                    value={filters.location_id} onChange={(e) => setFilters(f => ({ ...f, location_id: e.target.value }))}>
                     <option value="all">📍 Todas las Sedes</option>
                     {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                 </select>
 
-                <select className="form-input" style={{ width: 'auto', minWidth: 150 }} 
-                    value={filters.date_range} onChange={(e) => setFilters(f => ({...f, date_range: e.target.value}))}>
+                <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
+                    value={filters.date_range} onChange={(e) => setFilters(f => ({ ...f, date_range: e.target.value }))}>
                     <option value="este_mes">📅 Este Mes</option>
                     <option value="semana">📅 Esta Semana</option>
                     <option value="hoy">📅 Hoy</option>
                     <option value="todo">📅 Histórico Total</option>
                 </select>
 
-                <select className="form-input" style={{ width: 'auto', minWidth: 150 }} 
-                    value={filters.membership_type_id} onChange={(e) => setFilters(f => ({...f, membership_type_id: e.target.value}))}>
+                <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
+                    value={filters.membership_type_id} onChange={(e) => setFilters(f => ({ ...f, membership_type_id: e.target.value }))}>
                     <option value="all">💎 Todos los Planes</option>
                     {memTypes.map(m => <option key={m.id} value={m.id}>Plan {m.name}</option>)}
                 </select>
 
-                <select className="form-input" style={{ width: 'auto', minWidth: 150 }} 
-                    value={filters.client_status} onChange={(e) => setFilters(f => ({...f, client_status: e.target.value}))}>
+                <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
+                    value={filters.client_status} onChange={(e) => setFilters(f => ({ ...f, client_status: e.target.value }))}>
                     <option value="all">🏃‍♂️ Todos los Estados</option>
                     <option value="active">🟢 Activos</option>
                     <option value="expira_pronto">🟠 Riesgo Churn</option>
@@ -246,16 +231,15 @@ export default function Dashboard() {
                 </select>
             </div>
 
-            {/* 1. KPIs */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-2xl)' }}>
                 <div className="stat-card" style={{ borderLeft: '4px solid var(--success)' }}>
                     <div className="stat-card-icon" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}><FiDollarSign /></div>
                     <div className="stat-card-content">
                         <div className="stat-card-label">Ingresos Filtro</div>
-                        <div className="stat-card-value">S/ {computed.monthRevenue.toLocaleString('en-US', {maximumFractionDigits:0})}</div>
+                        <div className="stat-card-value">S/ {computed.monthRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
                     </div>
                 </div>
-                
+
                 <div className="stat-card" style={{ borderLeft: '4px solid var(--info)' }}>
                     <div className="stat-card-icon" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}><FiUsers /></div>
                     <div className="stat-card-content">
@@ -283,9 +267,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* 2. Charts Data Row A */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                {/* Heatmap */}
                 <div className="card">
                     <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
                         🔥 Mapa de Calor de Asistencias (Hora vs Día)
@@ -293,17 +275,15 @@ export default function Dashboard() {
                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                         Analiza las horas pico del gimnasio filtrado por el rango de fechas seleccionado.
                     </p>
-                    
+
                     <div style={{ display: 'grid', gridTemplateColumns: '40px repeat(16, 1fr)', gap: '4px', position: 'relative' }}>
-                        {/* Headers Horizontal */}
                         <div style={{ height: 20 }}></div>
-                        {Array.from({length: 16}).map((_, i) => (
+                        {Array.from({ length: 16 }).map((_, i) => (
                             <div key={i} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textAlign: 'center' }}>
                                 {i + 6}
                             </div>
                         ))}
 
-                        {/* Rows */}
                         {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(dayName => (
                             <React.Fragment key={dayName}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '0.5rem' }}>
@@ -312,18 +292,18 @@ export default function Dashboard() {
                                 {computed.heatmapCells.filter(c => c.day === dayName).map((cell, i) => {
                                     let opacity = computed.maxHeat === 0 ? 0.05 : (cell.val / computed.maxHeat)
                                     if (opacity > 0 && opacity < 0.2) opacity = 0.2 // min visibility
-                                    
+
                                     return (
-                                        <div key={i} title={cell.val + ' asistencias a las ' + cell.hour + ':00'} style={{ 
-                                            background: `rgba(249, 115, 22, ${opacity})`, 
+                                        <div key={i} title={cell.val + ' asistencias a las ' + cell.hour + ':00'} style={{
+                                            background: `rgba(249, 115, 22, ${opacity})`,
                                             border: '1px solid rgba(255,255,255,0.05)',
                                             borderRadius: '4px',
                                             height: '24px',
                                             cursor: 'pointer',
                                             transition: 'transform 0.1s'
-                                        }} 
-                                        onMouseEnter={(e)=> e.currentTarget.style.transform='scale(1.2)'}
-                                        onMouseLeave={(e)=> e.currentTarget.style.transform='scale(1)'}
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                         />
                                     )
                                 })}
@@ -332,7 +312,6 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Class Performance */}
                 <div className="card">
                     <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
                         🏋️ Rendimiento de Clases Grupales
@@ -343,9 +322,9 @@ export default function Dashboard() {
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={computed.classPerfData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis dataKey="name" stroke="#64748b" fontSize={11} tick={{fill: '#94a3b8'}} angle={-15} textAnchor="end" height={50} />
+                            <XAxis dataKey="name" stroke="#64748b" fontSize={11} tick={{ fill: '#94a3b8' }} angle={-15} textAnchor="end" height={50} />
                             <YAxis stroke="#64748b" fontSize={11} />
-                            <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
+                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
                             <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
                             <Bar dataKey="asistencias" name="Inscritos" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                             <Bar dataKey="capacidad" name="Capacidad" fill="#334155" radius={[4, 4, 0, 0]} />
@@ -354,7 +333,6 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Daily Attendance LineChart - Full Width */}
             <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
                 <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
                     📈 Evolución de Asistencias Diarias
@@ -370,7 +348,7 @@ export default function Dashboard() {
                     <ResponsiveContainer width="100%" height={260}>
                         <LineChart data={computed.dailyAttData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis dataKey="date" stroke="#64748b" fontSize={11} tick={{fill: '#94a3b8'}} />
+                            <XAxis dataKey="date" stroke="#64748b" fontSize={11} tick={{ fill: '#94a3b8' }} />
                             <YAxis stroke="#64748b" fontSize={11} />
                             <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
                             <Line type="monotone" dataKey="asistencias" name="Ctd. Personas" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', r: 4 }} activeDot={{ r: 6 }} />
@@ -379,9 +357,7 @@ export default function Dashboard() {
                 )}
             </div>
 
-            {/* 3. Charts Data Row B */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'var(--space-lg)' }}>
-                {/* Donut Membership */}
                 <div className="card">
                     <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
                         💎 Distribución de Clientes
@@ -408,7 +384,6 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Tendencia Ingresos */}
                 <div className="card">
                     <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
                         📈 Tendencia de Ingresos (Últimos 6 meses)
@@ -427,7 +402,7 @@ export default function Dashboard() {
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                             <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
                             <YAxis stroke="#64748b" fontSize={11} tickFormatter={(val) => 'S/ ' + val} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                                 formatter={(value) => [`S/ ${value}`, 'Ingresos']}
                             />
@@ -436,7 +411,7 @@ export default function Dashboard() {
                     </ResponsiveContainer>
                 </div>
             </div>
-            
+
         </div>
     )
 }

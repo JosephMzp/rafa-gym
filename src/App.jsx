@@ -65,11 +65,11 @@ export default function App() {
                 <Route path="locations" element={<Locations />} />
                 <Route path="guests" element={<Guests />} />
                 <Route path="classes" element={<Classes />} />
-                <Route path="routines" element={<Suspense fallback={<div style={{textAlign:'center',padding:'4rem'}}><div className="spinner spinner-lg"></div></div>}><Routines /></Suspense>} />
+                <Route path="routines" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Routines /></Suspense>} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="staff" element={<Staff />} />
-                <Route path="exercises" element={<Suspense fallback={<div style={{textAlign:'center',padding:'4rem'}}><div className="spinner spinner-lg"></div></div>}><Exercises /></Suspense>} />
-                <Route path="profile" element={<Suspense fallback={<div style={{textAlign:'center',padding:'4rem'}}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
+                <Route path="exercises" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Exercises /></Suspense>} />
+                <Route path="profile" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
             </Route>
 
             {/* Client portal route */}
@@ -82,7 +82,7 @@ export default function App() {
                 }
             />
 
-            {/* Catch all */}
+
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )

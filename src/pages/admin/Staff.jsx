@@ -90,7 +90,6 @@ export default function Staff() {
                 </div>
             </div>
 
-            {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
                 <div className="stat-card">
                     <div className="stat-card-icon" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' }}><FiUser /></div>
@@ -106,7 +105,6 @@ export default function Staff() {
                 </div>
             </div>
 
-            {/* Filters */}
             <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)', flexWrap: 'wrap' }}>
                 <div className="search-bar" style={{ flex: 1 }}>
                     <span className="search-bar-icon"><FiSearch /></span>
@@ -127,7 +125,6 @@ export default function Staff() {
                 </div>
             </div>
 
-            {/* Staff Cards Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 'var(--space-lg)' }}>
                 {filtered.map(member => {
                     const roleName = member.roles?.name || 'N/A'
@@ -212,7 +209,6 @@ export default function Staff() {
                 </div>
             )}
 
-            {/* Edit Modal */}
             {showModal && editingStaff && (
                 <StaffEditModal
                     staff={editingStaff}

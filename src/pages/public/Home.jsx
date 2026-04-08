@@ -15,7 +15,6 @@ var LOCATIONS = [
 export default function Home() {
     return (
         <div className="home-page">
-            {/* ─── Hero Section ─── */}
             <section className="hero" id="hero">
                 <div className="hero-bg">
                     <div className="hero-glow" />
@@ -73,7 +72,7 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* ─── Services Section ─── */}
+            {/* ─── servicios ─── */}
             <section className="section" id="servicios">
                 <div className="container">
                     <div className="section-header">
@@ -99,7 +98,7 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* ─── Membership Plans ─── */}
+            {/* ─── planes ─── */}
             <section className="section section-dark" id="membresias">
                 <div className="container">
                     <div className="section-header">
@@ -159,34 +158,7 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* ─── Products Section ─── */}
-            {/*<section className="section section-dark" id="productos">
-                <div className="container">
-                    <div className="section-header">
-                        <h2 className="section-title">Nuestros <span className="gradient-text">Productos</span></h2>
-                        <p className="section-subtitle">Suplementos y accesorios para complementar tu entrenamiento</p>
-                    </div>
-                    <div className="products-grid">
-                        {[
-                            { icon: '🥤', name: 'Proteína Whey', price: 'S/ 120', category: 'Suplemento' },
-                            { icon: '💊', name: 'Pre-Workout', price: 'S/ 85', category: 'Suplemento' },
-                            { icon: '🧤', name: 'Guantes Gym', price: 'S/ 35', category: 'Accesorio' },
-                            { icon: '💧', name: 'Botella Deportiva', price: 'S/ 25', category: 'Accesorio' },
-                            { icon: '🎒', name: 'Mochila Gym', price: 'S/ 65', category: 'Accesorio' },
-                            { icon: '🩳', name: 'Ropa Deportiva', price: 'Desde S/ 45', category: 'Ropa' }
-                        ].map((p, i) => (
-                            <div key={i} className="product-card card">
-                                <div className="product-icon">{p.icon}</div>
-                                <span className="badge badge-primary product-category">{p.category}</span>
-                                <h4 className="product-name">{p.name}</h4>
-                                <p className="product-price">{p.price}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ─── Contact Section ─── */}
+            {/* ─── contacto ─── */}
             <section className="section" id="contacto">
                 <div className="container">
                     <div className="section-header">

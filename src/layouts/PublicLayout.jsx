@@ -15,7 +15,6 @@ export default function PublicLayout() {
         { label: 'Contacto', href: '#contacto' }
     ]
 
-    // Theme toggle
     const [theme, setTheme] = useState(localStorage.getItem('rafagym-theme') || 'dark')
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme)

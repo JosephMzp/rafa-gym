@@ -45,7 +45,6 @@ export default function AdminLayout() {
 
     return (
         <div className={`admin-layout ${collapsed ? 'collapsed' : ''}`}>
-            {/* Mobile overlay */}
             {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
 
             {/* Sidebar */}
@@ -103,7 +102,6 @@ export default function AdminLayout() {
                 </div>
             </aside>
 
-            {/* Main content */}
             <div className="admin-main">
                 <header className="admin-topbar">
                     <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)} aria-label="Menu">

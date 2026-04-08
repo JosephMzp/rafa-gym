@@ -35,12 +35,10 @@ export default function ImageUpload({ currentUrl, onUpload, folder = 'rafagym', 
 
         setError(null)
 
-        // Show local preview immediately
         const reader = new FileReader()
         reader.onload = (e) => setPreview(e.target.result)
         reader.readAsDataURL(file)
 
-        // Upload to Cloudinary
         setUploading(true)
         try {
             const result = await uploadImage(file, folder)
@@ -72,7 +70,6 @@ export default function ImageUpload({ currentUrl, onUpload, folder = 'rafagym', 
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-sm)' }}>
-            {/* Avatar / Upload area */}
             <div
                 onClick={() => !uploading && inputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -88,14 +85,12 @@ export default function ImageUpload({ currentUrl, onUpload, folder = 'rafagym', 
                     boxShadow: dragOver ? '0 0 0 4px rgba(249, 115, 22, 0.2)' : 'none'
                 }}
             >
-                {/* Fallback text when no image */}
                 {!displayUrl && !uploading && (
                     <span style={{ fontSize: size * 0.35, fontWeight: 700, color: 'var(--text-muted)' }}>
                         {fallbackText}
                     </span>
                 )}
 
-                {/* Hover overlay */}
                 <div style={{
                     position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'rgba(0,0,0,0.55)', opacity: uploading ? 1 : 0, transition: 'opacity 0.2s',
@@ -112,7 +107,6 @@ export default function ImageUpload({ currentUrl, onUpload, folder = 'rafagym', 
                 </div>
             </div>
 
-            {/* Remove button */}
             {displayUrl && !uploading && (
                 <button
                     onClick={(e) => { e.stopPropagation(); removeImage() }}
@@ -126,19 +120,16 @@ export default function ImageUpload({ currentUrl, onUpload, folder = 'rafagym', 
                 </button>
             )}
 
-            {/* Label */}
             {!displayUrl && !uploading && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
                     Clic o arrastra una imagen
                 </span>
             )}
 
-            {/* Error */}
             {error && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--danger)', textAlign: 'center' }}>{error}</span>
             )}
 
-            {/* Hidden file input */}
             <input
                 ref={inputRef}
                 type="file"

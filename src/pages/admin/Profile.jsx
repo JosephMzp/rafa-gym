@@ -63,11 +63,10 @@ export default function Profile() {
         try {
             var url = await uploadToCloudinary(file, 'rafagym/staff')
             setPhotoUrl(url)
-            
-            // Auto save photo independently to database just in case
+
             await supabase.from('staff').update({ photo_url: url }).eq('id', user.id)
             updateUser({ photo_url: url })
-            
+
             setMessage('Foto actualizada')
             setTimeout(function () { setMessage(null) }, 3000)
         } catch (err) {
@@ -82,7 +81,7 @@ export default function Profile() {
     async function removePhoto() {
         setPreview(null)
         setPhotoUrl('')
-        
+
         try {
             await supabase.from('staff').update({ photo_url: null }).eq('id', user.id)
             updateUser({ photo_url: null })
@@ -114,9 +113,8 @@ export default function Profile() {
 
     return (
         <div>
-            {/* Header Area with seamless gradient fade */}
-            <div style={{ 
-                margin: '-var(--space-2xl) -var(--space-2xl) var(--space-2xl) -var(--space-2xl)', 
+            <div style={{
+                margin: '-var(--space-2xl) -var(--space-2xl) var(--space-2xl) -var(--space-2xl)',
                 padding: 'var(--space-2xl) var(--space-2xl) 5rem var(--space-2xl)',
                 background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), var(--dark-900))',
                 borderBottom: '1px solid var(--border-subtle)'
@@ -131,15 +129,14 @@ export default function Profile() {
                 </div>
             </div>
 
-            <div style={{ 
-                maxWidth: 900, margin: '-4rem auto 0 auto', 
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-xl)', alignItems: 'start' 
+            <div style={{
+                maxWidth: 900, margin: '-4rem auto 0 auto',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-xl)', alignItems: 'start'
             }}>
-                
-                {/* Left Column: Photo & Role */}
+
                 <div className="card" style={{ padding: 0, overflow: 'hidden', textAlign: 'center', borderColor: 'var(--primary-700)' }}>
                     <div style={{ height: 100, background: 'linear-gradient(135deg, var(--primary-500), #a78bfa)' }}></div>
-                    
+
                     <div style={{ padding: '0 var(--space-xl) var(--space-2xl)', marginTop: -50, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ position: 'relative', marginBottom: 'var(--space-md)' }}>
                             <div
@@ -165,8 +162,7 @@ export default function Profile() {
                                     </div>
                                 )}
                             </div>
-                            
-                            {/* Hover Camera Icon */}
+
                             <button
                                 onClick={function () { if (!uploading && fileRef.current) fileRef.current.click() }}
                                 style={{
@@ -177,15 +173,15 @@ export default function Profile() {
                                     cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                                     transition: 'transform 0.2s'
                                 }}
-                                onMouseEnter={function(e) { e.currentTarget.style.transform = 'scale(1.1)' }}
-                                onMouseLeave={function(e) { e.currentTarget.style.transform = 'scale(1)' }}
+                                onMouseEnter={function (e) { e.currentTarget.style.transform = 'scale(1.1)' }}
+                                onMouseLeave={function (e) { e.currentTarget.style.transform = 'scale(1)' }}
                             >
                                 <FiCamera size={14} />
                             </button>
                             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
                                 onChange={function (e) { handlePhoto(e.target.files[0]) }} />
                         </div>
-                        
+
                         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem' }}>
                             {user?.name}
                         </h2>
@@ -202,13 +198,13 @@ export default function Profile() {
                                     fontWeight: 500, padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
                                     transition: 'background 0.2s'
                                 }}
-                                onMouseEnter={function(e) { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
-                                onMouseLeave={function(e) { e.currentTarget.style.background = 'transparent' }}
+                                onMouseEnter={function (e) { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
+                                onMouseLeave={function (e) { e.currentTarget.style.background = 'transparent' }}
                             >
                                 <FiX size={14} /> Eliminar foto actual
                             </button>
                         )}
-                        
+
                         <div style={{ marginTop: 'var(--space-lg)', width: '100%', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                                 <FiCheckCircle color="var(--success)" /> <span>Cuenta Activa</span>
@@ -217,9 +213,8 @@ export default function Profile() {
                     </div>
                 </div>
 
-                {/* Right Column: Edit Form */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                    
+
                     {message && (
                         <div className="card" style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <FiCheckCircle color="#10b981" size={20} />
@@ -240,7 +235,7 @@ export default function Profile() {
                         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-xl)', fontSize: '1.125rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
                             Datos Personales
                         </h3>
-                        
+
                         <div className="form-grid">
                             <div className="form-group">
                                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>

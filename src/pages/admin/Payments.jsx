@@ -122,7 +122,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
     const activeClients = clients.filter(c => c.status === 'active')
     const activeClasses = classes.filter(c => c.status === 'active')
 
-    // Client search state
     const [clientSearch, setClientSearch] = useState('')
     const [showClientDropdown, setShowClientDropdown] = useState(false)
     const [pickedClient, setPickedClient] = useState(null)
@@ -160,7 +159,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
         setShowClientDropdown(false)
         setForm(prev => {
             const updated = { ...prev, client_id: client.id }
-            // Re‑check free classes if concept is Clase Grupal
             if (prev.concept === 'Clase Grupal') {
                 const m = client?.membership_type?.name
                 if (m === 'Fit' || m === 'Gold') updated.amount = '0'
@@ -178,7 +176,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
     const isMembershipConcept = form.concept === 'Mensualidad' || form.concept === 'Renovación'
     const isClassConcept = form.concept === 'Clase Grupal'
 
-    // Get selected client's membership type
     const selectedClient = activeClients.find(c => c.id === form.client_id)
     const clientMembershipName = selectedClient?.membership_type?.name || null
     const isBasicMembership = clientMembershipName === 'Estándar'
@@ -188,12 +185,10 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
         setForm(prev => {
             const updated = { ...prev, [field]: value }
 
-            // When concept changes
             if (field === 'concept') {
                 const isMembership = value === 'Mensualidad' || value === 'Renovación'
                 const isClass = value === 'Clase Grupal'
 
-                // Reset all concept-specific fields
                 updated.membership_type_id = ''
                 updated.membership_type_name = ''
                 updated.class_id = ''
@@ -217,7 +212,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
                 }
             }
 
-            // When membership type changes
             if (field === 'membership_type_id') {
                 const selected = membershipTypes.find(m => m.id === value)
                 if (selected) {
@@ -229,7 +223,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
                 }
             }
 
-            // When class changes
             if (field === 'class_id') {
                 const selected = activeClasses.find(c => c.id === value)
                 if (selected) {
@@ -238,7 +231,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
                 }
             }
 
-            // When payment date changes and membership is selected
             if (field === 'date' && updated.membership_type_id) {
                 const selected = membershipTypes.find(m => m.id === updated.membership_type_id)
                 if (selected) {
@@ -248,12 +240,10 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
                 }
             }
 
-            // When client changes while on class concept, re-check membership
             if (field === 'client_id' && prev.concept === 'Clase Grupal') {
                 const newClient = activeClients.find(c => c.id === value)
                 const newMembership = newClient?.membership_type?.name
                 if (newMembership === 'Fit' || newMembership === 'Gold') {
-                    // They get free classes
                     updated.amount = '0'
                 }
             }
@@ -265,7 +255,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
     const selectedMembership = membershipTypes.find(m => m.id === form.membership_type_id)
     const selectedClass = activeClasses.find(c => c.id === form.class_id)
 
-    // Validation: class payment only for basic membership
     const classPaymentBlocked = isClassConcept && hasFreeClasses
 
     return (
