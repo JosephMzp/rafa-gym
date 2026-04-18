@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
     FiSearch, FiPlus, FiX, FiEdit2, FiTrash2, FiEye, FiTarget,
-    FiClock, FiUsers, FiChevronDown, FiChevronUp, FiFilter, FiBookOpen
+    FiClock, FiUsers, FiChevronDown, FiChevronUp, FiFilter, FiBookOpen, FiList, FiZap, FiCalendar, FiCheck
 } from 'react-icons/fi'
 import {
     getRoutineTemplates, createRoutineTemplate, updateRoutineTemplate, deleteRoutineTemplate,
@@ -153,10 +153,10 @@ export default function Routines() {
             {/* Tabs */}
             <div className="tabs" style={{ marginBottom: 'var(--space-xl)' }}>
                 <button className={`tab ${tab === 'templates' ? 'active' : ''}`} onClick={() => setTab('templates')}>
-                    📋 Biblioteca de Rutinas
+                    <FiList size={14} style={{ marginRight: '0.375rem' }} /> Biblioteca de Rutinas
                 </button>
                 <button className={`tab ${tab === 'subscriptions' ? 'active' : ''}`} onClick={() => setTab('subscriptions')}>
-                    👥 Suscripciones <span className="badge badge-primary" style={{ marginLeft: '0.375rem' }}>{subscriptions.length}</span>
+                    <FiUsers size={14} style={{ marginRight: '0.375rem' }} /> Suscripciones <span className="badge badge-primary" style={{ marginLeft: '0.375rem' }}>{subscriptions.length}</span>
                 </button>
             </div>
 
@@ -261,7 +261,7 @@ export default function Routines() {
                     })}
                     {filteredTemplates.length === 0 && (
                         <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
-                            <div className="empty-state-icon">📋</div>
+                            <div className="empty-state-icon"><FiBookOpen size={32} /></div>
                             <div className="empty-state-title">No se encontraron rutinas</div>
                         </div>
                     )}
@@ -273,7 +273,7 @@ export default function Routines() {
                 <div>
                     {filteredSubs.length === 0 ? (
                         <div className="empty-state">
-                            <div className="empty-state-icon">👥</div>
+                            <div className="empty-state-icon"><FiUsers size={32} /></div>
                             <div className="empty-state-title">No hay suscripciones activas</div>
                         </div>
                     ) : (
@@ -431,7 +431,7 @@ function DetailModal({ template, exercises, subscribers, onClose, onEdit }) {
                     {/* Days Configuration */}
                     <div style={{ marginBottom: 'var(--space-2xl)' }}>
                         <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ color: template.color }}>📅</span> Días de Entrenamiento
+                            <FiCalendar size={16} style={{ color: template.color }} /> Días de Entrenamiento
                         </h3>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             {(template.days || []).map(d => (
@@ -446,14 +446,14 @@ function DetailModal({ template, exercises, subscribers, onClose, onEdit }) {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 'var(--space-lg)' }}>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span style={{ color: template.color }}>⚡</span> Programa
+                                <FiZap size={16} style={{ color: template.color }} /> Programa
                             </h3>
                             <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{exercises.length} ejercicios en total</span>
                         </div>
 
                         {Object.keys(byDay).length === 0 && (
                             <div className="empty-state" style={{ padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px' }}>
-                                <div className="empty-state-icon" style={{ fontSize: '2rem', opacity: 0.5 }}>🤷‍♂️</div>
+                                <div className="empty-state-icon" style={{ fontSize: '2rem', opacity: 0.5 }}><FiTarget size={32} /></div>
                                 <div className="empty-state-title" style={{ fontSize: '1rem' }}>Aún no hay ejercicios programados</div>
                             </div>
                         )}
@@ -625,7 +625,7 @@ function TemplateFormModal({ template, onSave, onClose }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal modal-lg" onClick={e => e.stopPropagation()} style={{ maxWidth: 720, maxHeight: '92vh', overflow: 'auto' }}>
                 <div className="modal-header">
-                    <h2 className="modal-title">{template ? '✏️ Editar Plantilla' : '✨ Nueva Plantilla de Rutina'}</h2>
+                    <h2 className="modal-title">{template ? <><FiEdit2 size={18} style={{marginRight:'0.375rem'}} />Editar Plantilla</> : <><FiPlus size={18} style={{marginRight:'0.375rem'}} />Nueva Plantilla de Rutina</>}</h2>
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
                 <div className="modal-body">
@@ -759,7 +759,7 @@ function TemplateFormModal({ template, onSave, onClose }) {
                 <div className="modal-footer">
                     <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
                     <button className="btn btn-primary" onClick={doSave} disabled={!name}>
-                        {template ? 'Guardar Cambios' : '✨ Crear Plantilla'}
+                        {template ? 'Guardar Cambios' : <><FiPlus size={14} style={{marginRight:'0.25rem'}} /> Crear Plantilla</>}
                     </button>
                 </div>
             </div>
@@ -830,7 +830,7 @@ function AddSubscriptionModal({ templates, onSave, onClose }) {
                                                 <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{t.name}</div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t.level} • {t.duration}</div>
                                             </div>
-                                            {templateId === t.id && <span style={{ marginLeft: 'auto', color: t.color, fontWeight: 700 }}>✓</span>}
+                                            {templateId === t.id && <span style={{ marginLeft: 'auto', color: t.color, fontWeight: 700 }}><FiCheck /></span>}
                                         </div>
                                     ))}
                                 </div>
@@ -841,7 +841,7 @@ function AddSubscriptionModal({ templates, onSave, onClose }) {
                 <div className="modal-footer">
                     <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
                     <button className="btn btn-primary" disabled={!clientId || !templateId || saving} onClick={doSave}>
-                        {saving ? 'Guardando...' : '✅ Suscribir'}
+                        {saving ? 'Guardando...' : <><FiCheck size={14} style={{marginRight:'0.25rem'}} /> Suscribir</>}
                     </button>
                 </div>
             </div>

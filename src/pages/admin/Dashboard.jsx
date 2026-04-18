@@ -3,7 +3,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, AreaChart, Area, Legend, LineChart, Line
 } from 'recharts'
-import { FiUsers, FiDollarSign, FiCalendar, FiAlertTriangle, FiFilter } from 'react-icons/fi'
+import { FiUsers, FiDollarSign, FiCalendar, FiAlertTriangle, FiFilter, FiMapPin, FiAward, FiCpu, FiTrendingUp, FiUserCheck, FiCircle } from 'react-icons/fi'
 import {
     getClients, getPayments, getAttendances, getLocations, getMembershipTypes,
     getActiveClientsWithMembershipView, getClassAttendanceStatsView
@@ -204,30 +204,30 @@ export default function Dashboard() {
 
                 <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
                     value={filters.location_id} onChange={(e) => setFilters(f => ({ ...f, location_id: e.target.value }))}>
-                    <option value="all">📍 Todas las Sedes</option>
+                    <option value="all"><FiMapPin size={12} style={{verticalAlign:'middle', marginRight:4}} />Todas las Sedes</option>
                     {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                 </select>
 
                 <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
                     value={filters.date_range} onChange={(e) => setFilters(f => ({ ...f, date_range: e.target.value }))}>
-                    <option value="este_mes">📅 Este Mes</option>
-                    <option value="semana">📅 Esta Semana</option>
-                    <option value="hoy">📅 Hoy</option>
-                    <option value="todo">📅 Histórico Total</option>
+                    <option value="este_mes">Este Mes</option>
+                    <option value="semana">Esta Semana</option>
+                    <option value="hoy">Hoy</option>
+                    <option value="todo">Histórico Total</option>
                 </select>
 
                 <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
                     value={filters.membership_type_id} onChange={(e) => setFilters(f => ({ ...f, membership_type_id: e.target.value }))}>
-                    <option value="all">💎 Todos los Planes</option>
+                    <option value="all">Todos los Planes</option>
                     {memTypes.map(m => <option key={m.id} value={m.id}>Plan {m.name}</option>)}
                 </select>
 
                 <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
                     value={filters.client_status} onChange={(e) => setFilters(f => ({ ...f, client_status: e.target.value }))}>
-                    <option value="all">🏃‍♂️ Todos los Estados</option>
-                    <option value="active">🟢 Activos</option>
-                    <option value="expira_pronto">🟠 Riesgo Churn</option>
-                    <option value="inactive">🔴 Inactivos</option>
+                    <option value="all">Todos los Estados</option>
+                    <option value="active">Activos</option>
+                    <option value="expira_pronto">Riesgo Churn</option>
+                    <option value="inactive">Inactivos</option>
                 </select>
             </div>
 
@@ -269,8 +269,8 @@ export default function Dashboard() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
                 <div className="card">
-                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
-                        🔥 Mapa de Calor de Asistencias (Hora vs Día)
+                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiCpu color="#f97316" size={18} /> Mapa de Calor de Asistencias (Hora vs Día)
                     </h3>
                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                         Analiza las horas pico del gimnasio filtrado por el rango de fechas seleccionado.
@@ -313,8 +313,8 @@ export default function Dashboard() {
                 </div>
 
                 <div className="card">
-                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
-                        🏋️ Rendimiento de Clases Grupales
+                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiUsers color="#8b5cf6" size={18} /> Rendimiento de Clases Grupales
                     </h3>
                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                         Inscripciones actuales vs Capacidad Máxima (Top 8 Clases)
@@ -334,8 +334,8 @@ export default function Dashboard() {
             </div>
 
             <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
-                    📈 Evolución de Asistencias Diarias
+                <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FiTrendingUp color="#3b82f6" size={18} /> Evolución de Asistencias Diarias
                 </h3>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                     Monitorea el flujo de ingresos al gimnasio día por día según los filtros seleccionados.
@@ -359,8 +359,8 @@ export default function Dashboard() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'var(--space-lg)' }}>
                 <div className="card">
-                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
-                        💎 Distribución de Clientes
+                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiAward color="#f59e0b" size={18} /> Distribución de Clientes
                     </h3>
                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                         Desglose de los planes contratados por clientes actuales.
@@ -385,8 +385,8 @@ export default function Dashboard() {
                 </div>
 
                 <div className="card">
-                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem' }}>
-                        📈 Tendencia de Ingresos (Últimos 6 meses)
+                    <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-md)', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiTrendingUp color="#10b981" size={18} /> Tendencia de Ingresos (Últimos 6 meses)
                     </h3>
                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                         Comparativa de los ingresos por venta de planes a nivel general histórico. Esta métrica ignora filtros de tiempo.

@@ -5,7 +5,8 @@ import { supabase } from '../../lib/supabase'
 import {
     FiUser, FiAward, FiCalendar, FiDollarSign, FiActivity,
     FiBookOpen, FiCamera, FiMapPin, FiClock, FiPhone, FiMail,
-    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon, FiPlus, FiCheck, FiUsers, FiTarget
+    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon, FiPlus, FiCheck, FiUsers, FiTarget,
+    FiZap, FiSearch, FiChevronLeft
 } from 'react-icons/fi'
 import {
     getClientSubscriptions, subscribeToTemplate, unsubscribeFromTemplate,
@@ -269,7 +270,7 @@ export default function ClientDashboard() {
                 alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', position: 'sticky', top: 0, zIndex: 50
             }}>
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{'💪'}</span>
+                    <span style={{ fontSize: '1.5rem' }}><FiZap /></span>
                     <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 800 }}>
                         Rafa<span className="gradient-text">Gym</span>
                     </span>
@@ -362,7 +363,7 @@ export default function ClientDashboard() {
 
                     <div>
                         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800 }}>
-                            Hola,{' '}<span className="gradient-text">{user?.name}</span>{' '}{'👋'}
+                            Hola,{' '}<span className="gradient-text">{user?.name}</span>{' '}<FiCheck size={22} style={{display:'inline', color:'var(--primary-400)'}} />
                         </h1>
                         <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontSize: '0.9375rem' }}>
                             Aqui esta el resumen de tu cuenta
@@ -480,8 +481,8 @@ export default function ClientDashboard() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     {isRoutine && (
-                                        <div style={{ fontSize: '0.625rem', background: 'rgba(249,115,22,0.2)', color: '#f97316', padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            💪 Rutina
+                                        <div style={{ fontSize: '0.625rem', background: 'rgba(249,115,22,0.2)', color: '#f97316', padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                            <FiZap size={8} /> Rutina
                                         </div>
                                     )}
                                     {dayClasses2.map(function (c) {
@@ -682,7 +683,7 @@ export default function ClientDashboard() {
                         </div>
                         {subscriptions.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏋️</div>
+                                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}><FiTarget size={40} style={{opacity:0.4, color:'var(--primary-400)'}} /></div>
                                 <p style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>No estás suscrito a ninguna rutina</p>
                                 <button className="btn btn-sm btn-secondary" onClick={function () { setShowBrowseRoutines(true) }}>Ver rutinas disponibles</button>
                             </div>
@@ -757,7 +758,7 @@ export default function ClientDashboard() {
                         </h3>
                         {classes.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'📚'}</div>
+                                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}><FiBookOpen size={36} style={{opacity:0.4, color:'#8b5cf6'}} /></div>
                                 <p style={{ fontSize: '0.875rem' }}>No estas inscrito en ninguna clase</p>
                             </div>
                         ) : (
@@ -828,7 +829,7 @@ export default function ClientDashboard() {
                                     color: membershipName === 'Gold' ? '#f59e0b' : '#8b5cf6',
                                     border: '1px solid currentColor'
                                 }}>
-                                    {membershipName === 'Gold' ? '🥇' : '🥈'} {membershipName} — Acceso Gratis
+                                    {membershipName === 'Gold' ? <FiAward size={16} style={{color:'#f59e0b'}} /> : <FiAward size={16} style={{color:'#8b5cf6'}} />} {membershipName} — Acceso Gratis
                                 </span>
                             </div>
 
@@ -865,7 +866,7 @@ export default function ClientDashboard() {
                                                     <div>
                                                         <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.125rem' }}>{cls.name}</div>
                                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            {cls.instructor && <span>👤 {cls.instructor} · </span>}
+                                                            {cls.instructor && <span><FiUser size={10} style={{marginRight:2, verticalAlign:'middle'}} /> {cls.instructor} · </span>}
                                                             {cls.location?.name}
                                                         </div>
                                                     </div>
@@ -877,7 +878,7 @@ export default function ClientDashboard() {
                                                 </div>
 
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.625rem' }}>
-                                                    🕐 {cls.schedule}
+                                                    <FiClock size={12} style={{marginRight:3, verticalAlign:'middle'}} /> {cls.schedule}
                                                 </div>
 
                                                 {/* Capacity bar */}
@@ -1061,7 +1062,7 @@ function BrowseRoutinesModal({ templates, subscriptions, clientId, onClose, onCh
             <div className="modal modal-lg" onClick={function (e) { e.stopPropagation() }}
                 style={{ maxWidth: 860, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div className="modal-header">
-                    <h2 className="modal-title">🏋️ Explorar Rutinas Disponibles</h2>
+                    <h2 className="modal-title"><FiActivity size={18} style={{marginRight:'0.375rem'}} /> Explorar Rutinas Disponibles</h2>
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
 
@@ -1070,7 +1071,7 @@ function BrowseRoutinesModal({ templates, subscriptions, clientId, onClose, onCh
                     <div style={{ width: 340, borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border-subtle)' }}>
                             <div className="search-bar" style={{ marginBottom: '0.5rem' }}>
-                                <span className="search-bar-icon">🔍</span>
+                                <span className="search-bar-icon"><FiSearch /></span>
                                 <input placeholder="Buscar rutina..." value={search} onChange={function (e) { setSearch(e.target.value) }} />
                             </div>
                             <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
@@ -1120,7 +1121,7 @@ function BrowseRoutinesModal({ templates, subscriptions, clientId, onClose, onCh
                     <div style={{ flex: 1, overflow: 'auto', padding: 'var(--space-lg)' }}>
                         {!selectedTemplate ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👈</div>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}><FiChevronLeft size={48} style={{opacity:0.4}} /></div>
                                 <p>Selecciona una rutina para ver sus detalles</p>
                             </div>
                         ) : (

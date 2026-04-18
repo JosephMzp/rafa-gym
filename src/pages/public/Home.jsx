@@ -1,4 +1,5 @@
 import './Home.css'
+import { FiMapPin, FiPhone, FiClock, FiMail, FiMessageCircle } from 'react-icons/fi'
 
 var MEMBERSHIP_TYPES = [
     { id: 1, name: 'Estándar', price: 89.90, icon: '🥉', features: ['Acceso a 1 sede', '1 ingreso/día', 'Zona de máquinas'] },
@@ -143,9 +144,9 @@ export default function Home() {
                                 </div>
                                 <div className="location-info">
                                     <h3 className="location-name">{loc.name}</h3>
-                                    <p className="location-address">📍 {loc.address}</p>
-                                    <p className="location-phone">📞 {loc.phone}</p>
-                                    <p className="location-hours">🕐 {loc.hours}</p>
+                                    <p className="location-address"><FiMapPin size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> {loc.address}</p>
+                                    <p className="location-phone"><FiPhone size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> {loc.phone}</p>
+                                    <p className="location-hours"><FiClock size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> {loc.hours}</p>
                                     <div className="location-services">
                                         {loc.services.map((s, j) => (
                                             <span key={j} className="badge badge-primary">{s}</span>
@@ -168,28 +169,28 @@ export default function Home() {
                     <div className="contact-grid">
                         <div className="contact-info">
                             <div className="contact-item">
-                                <span className="contact-icon">📧</span>
+                                <span className="contact-icon"><FiMail size={22} /></span>
                                 <div>
                                     <h4>Email</h4>
                                     <p>info@rafagym.com</p>
                                 </div>
                             </div>
                             <div className="contact-item">
-                                <span className="contact-icon">📞</span>
+                                <span className="contact-icon"><FiPhone size={22} /></span>
                                 <div>
                                     <h4>Teléfono</h4>
                                     <p>+51 987 654 321</p>
                                 </div>
                             </div>
                             <div className="contact-item">
-                                <span className="contact-icon">💬</span>
+                                <span className="contact-icon"><FiMessageCircle size={22} /></span>
                                 <div>
                                     <h4>WhatsApp</h4>
                                     <p>+51 987 654 321</p>
                                 </div>
                             </div>
                             <div className="contact-item">
-                                <span className="contact-icon">🕐</span>
+                                <span className="contact-icon"><FiClock size={22} /></span>
                                 <div>
                                     <h4>Horario de Atención</h4>
                                     <p>Lun - Sab: 5:00am - 10:00pm</p>

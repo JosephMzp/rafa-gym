@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiSearch, FiPlus, FiX, FiEdit2, FiTrash2, FiEye, FiTarget, FiTool } from 'react-icons/fi'
+import { FiSearch, FiPlus, FiX, FiEdit2, FiTrash2, FiEye, FiTarget, FiTool, FiVideo, FiActivity, FiCamera, FiFileText } from 'react-icons/fi'
 import { getExercises, createExercise, updateExercise, deleteExercise } from '../../lib/services'
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
@@ -24,6 +24,17 @@ async function uploadToCloudinary(file, folder) {
     fd.append('folder', folder)
     var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD_NAME + '/image/upload', { method: 'POST', body: fd })
     if (!res.ok) throw new Error('Upload failed')
+    var data = await res.json()
+    return data.secure_url
+}
+
+async function uploadVideoToCloudinary(file, folder) {
+    var fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', UPLOAD_PRESET)
+    fd.append('folder', folder)
+    var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD_NAME + '/video/upload', { method: 'POST', body: fd })
+    if (!res.ok) throw new Error('Video upload failed')
     var data = await res.json()
     return data.secure_url
 }
@@ -148,7 +159,7 @@ export default function Exercises() {
                                 position: 'relative', borderBottom: '2px solid ' + color + '30'
                             }}>
                                 {!exercise.image_url && (
-                                    <span style={{ fontSize: '3rem', opacity: 0.35 }}>{'🏋️'}</span>
+                                    <span style={{ fontSize: '3rem', opacity: 0.35 }}><FiActivity /></span>
                                 )}
                                 <span className="badge" style={{
                                     position: 'absolute', top: '0.75rem', left: '0.75rem',
@@ -203,67 +214,167 @@ export default function Exercises() {
 
             {filtered.length === 0 && (
                 <div className="empty-state">
-                    <div className="empty-state-icon">{'🏋️'}</div>
+                    <div className="empty-state-icon"><FiActivity size={40} /></div>
                     <div className="empty-state-title">No se encontraron ejercicios</div>
                     <p className="empty-state-description">Prueba con otros filtros o crea un nuevo ejercicio</p>
                 </div>
             )}
 
             {viewingExercise && (
-                <div className="modal-overlay" onClick={function () { setViewingExercise(null) }}>
-                    <div className="modal" onClick={function (e) { e.stopPropagation() }} style={{ maxWidth: 520 }}>
-                        <div className="modal-header">
-                            <h2 className="modal-title">Detalle del Ejercicio</h2>
-                            <button className="btn btn-ghost btn-icon" onClick={function () { setViewingExercise(null) }}>
-                                <FiX />
+                <div className="modal-overlay" style={{ zIndex: 1100, padding: 'var(--space-md)' }} onClick={function () { setViewingExercise(null) }}>
+                    <div className="modal" onClick={function (e) { e.stopPropagation() }} style={{ maxWidth: 520, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        {/* Close button layered on top */}
+                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}>
+                            <button
+                                onClick={function () { setViewingExercise(null) }}
+                                style={{
+                                    background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
+                                    border: '1px solid rgba(255,255,255,0.1)', color: '#fff',
+                                    width: 36, height: 36, borderRadius: '50%',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.7)'; e.currentTarget.style.transform = 'scale(1.05)' }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.5)'; e.currentTarget.style.transform = 'scale(1)' }}
+                            >
+                                <FiX size={18} />
                             </button>
                         </div>
-                        <div className="modal-body">
-                            {viewingExercise.image_url && (
-                                <img
-                                    src={optimizeUrl(viewingExercise.image_url, 600, 400)}
-                                    alt={viewingExercise.name}
+
+                        {/* Media Section */}
+                        <div style={{
+                            width: '100%',
+                            background: viewingExercise.video_url || viewingExercise.image_url ? '#000' : `linear-gradient(135deg, ${(muscleColor[viewingExercise.muscle_group] || '#94a3b8')}40, ${(muscleColor[viewingExercise.muscle_group] || '#94a3b8')}10)`,
+                            position: 'relative'
+                        }}>
+                            {viewingExercise.video_url ? (
+                                <video
+                                    src={viewingExercise.video_url}
+                                    controls
+                                    autoPlay
+                                    muted
+                                    loop
                                     style={{
-                                        width: '100%', height: 220, objectFit: 'cover',
-                                        borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-lg)'
+                                        width: '100%', maxHeight: 320, minHeight: 200,
+                                        objectFit: 'contain', display: 'block',
+                                        borderBottom: `2px solid ${(muscleColor[viewingExercise.muscle_group] || '#94a3b8')}40`
                                     }}
                                 />
+                            ) : viewingExercise.image_url ? (
+                                <img
+                                    src={optimizeUrl(viewingExercise.image_url, 800, 600)}
+                                    alt={viewingExercise.name}
+                                    style={{
+                                        width: '100%', height: 280, objectFit: 'cover', display: 'block',
+                                        borderBottom: `2px solid ${(muscleColor[viewingExercise.muscle_group] || '#94a3b8')}40`
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `2px solid ${(muscleColor[viewingExercise.muscle_group] || '#94a3b8')}40` }}>
+                                    <FiActivity size={64} style={{ opacity: 0.3, color: muscleColor[viewingExercise.muscle_group] || '#94a3b8' }} />
+                                </div>
                             )}
+                            
+                            {/* Gradient Overlay for seamless transition */}
+                            <div style={{
+                                position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
+                                background: 'linear-gradient(to top, var(--surface-card) 0%, transparent 100%)',
+                                pointerEvents: 'none'
+                            }}></div>
+                        </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
-                                <div className="form-group">
-                                    <span className="form-label">Nombre</span>
-                                    <span style={{ fontWeight: 600, fontSize: '1.0625rem' }}>{viewingExercise.name}</span>
+                        {/* Content Section */}
+                        <div style={{ padding: '0 var(--space-xl) var(--space-xl)', background: 'var(--surface-card)', marginTop: '-1rem', position: 'relative', zIndex: 5 }}>
+                            <div style={{ marginBottom: 'var(--space-lg)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace', background: 'var(--dark-700)', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                                        #{viewingExercise.id ? viewingExercise.id.substring(0, 8).toUpperCase() : 'N/A'}
+                                    </span>
+                                    {viewingExercise.created_at && (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            Registrado: {new Date(viewingExercise.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="form-group">
-                                    <span className="form-label">Grupo Muscular</span>
-                                    <span className="badge" style={{
-                                        background: (muscleColor[viewingExercise.muscle_group] || '#94a3b8') + '20',
-                                        color: muscleColor[viewingExercise.muscle_group] || '#94a3b8',
-                                        fontWeight: 600, display: 'inline-block'
-                                    }}>{viewingExercise.muscle_group}</span>
-                                </div>
-                                <div className="form-group">
-                                    <span className="form-label">Equipo</span>
-                                    <span style={{ fontWeight: 500 }}>{viewingExercise.equipment || 'Sin equipo'}</span>
-                                </div>
-                                <div className="form-group">
-                                    <span className="form-label">Series x Repeticiones</span>
-                                    <span style={{ fontWeight: 500 }}>{viewingExercise.sets_recommended} x {viewingExercise.reps_recommended}</span>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                                    <div>
+                                        <h2 style={{
+                                            fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800,
+                                            color: 'var(--text-primary)', marginBottom: '0.25rem', lineHeight: 1.2
+                                        }}>
+                                            {viewingExercise.name}
+                                        </h2>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: muscleColor[viewingExercise.muscle_group] || '#94a3b8', boxShadow: `0 0 8px ${muscleColor[viewingExercise.muscle_group] || '#94a3b8'}` }}></div>
+                                            {viewingExercise.muscle_group}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="form-group" style={{ marginTop: 'var(--space-md)' }}>
-                                <span className="form-label">Descripcion</span>
-                                <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                                    {viewingExercise.description || 'Sin descripcion'}
+                            <div style={{
+                                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)',
+                                marginBottom: 'var(--space-xl)'
+                            }}>
+                                <div style={{
+                                    background: 'var(--surface-overlay)', border: '1px solid var(--border-subtle)',
+                                    borderRadius: 'var(--radius-lg)', padding: 'var(--space-md)',
+                                    display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
+                                    transition: 'transform 0.2s', cursor: 'default'
+                                }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                                    <div style={{ background: 'var(--dark-500)', width: 44, height: 44, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--info)' }}>
+                                        <FiTool size={20} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Equipo</div>
+                                        <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>{viewingExercise.equipment || 'Ninguno'}</div>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    background: 'var(--surface-overlay)', border: '1px solid var(--border-subtle)',
+                                    borderRadius: 'var(--radius-lg)', padding: 'var(--space-md)',
+                                    display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
+                                    transition: 'transform 0.2s', cursor: 'default'
+                                }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                                    <div style={{ background: 'var(--dark-500)', width: 44, height: 44, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--warning)' }}>
+                                        <FiTarget size={20} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Carga Base</div>
+                                        <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>{viewingExercise.sets_recommended} series × {viewingExercise.reps_recommended}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{
+                                background: 'var(--surface-base)',
+                                borderLeft: `3px solid ${muscleColor[viewingExercise.muscle_group] || 'var(--primary-500)'}`,
+                                padding: 'var(--space-md) var(--space-lg)',
+                                borderRadius: '0 var(--radius-md) var(--radius-md) 0',
+                                marginBottom: 'var(--space-xs)'
+                            }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.625rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                    <FiFileText size={14} /> Instrucciones
+                                </div>
+                                <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
+                                    {viewingExercise.description || 'No hay instrucciones detalladas para este ejercicio.'}
                                 </p>
                             </div>
                         </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={function () { setViewingExercise(null) }}>Cerrar</button>
-                            <button className="btn btn-primary" onClick={function () { setViewingExercise(null); openEdit(viewingExercise) }}>
-                                <FiEdit2 /> Editar
+
+                        {/* Footer Action */}
+                        <div style={{
+                            padding: 'var(--space-md) var(--space-xl)', background: 'var(--surface-base)',
+                            borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-sm)'
+                        }}>
+                            <button className="btn btn-secondary" onClick={function () { setViewingExercise(null) }}>
+                                Cerrar
+                            </button>
+                            <button className="btn" style={{
+                                background: `linear-gradient(135deg, ${muscleColor[viewingExercise.muscle_group] || 'var(--primary-500)'}, ${(muscleColor[viewingExercise.muscle_group] || '#eab308')}bb)`,
+                                color: 'white', border: 'none', boxShadow: `0 4px 14px 0 ${(muscleColor[viewingExercise.muscle_group] || '#f97316')}40`
+                            }} onClick={function () { setViewingExercise(null); openEdit(viewingExercise) }}>
+                                <FiEdit2 /> Editar Ejercicio
                             </button>
                         </div>
                     </div>
@@ -293,10 +404,14 @@ function ExerciseFormModal(props) {
     var _sets = useState(exercise ? exercise.sets_recommended || 3 : 3)
     var _reps = useState(exercise ? exercise.reps_recommended || '' : '')
     var _img = useState(exercise ? exercise.image_url || '' : '')
+    var _videoUrl = useState(exercise ? exercise.video_url || '' : '')
     var _uploading = useState(false)
+    var _uploadingVideo = useState(false)
     var _preview = useState(null)
     var _imgError = useState(null)
+    var _videoError = useState(null)
     var fileRef = useRef(null)
+    var videoRef = useRef(null)
 
     var name = _name[0], setName = _name[1]
     var desc = _desc[0], setDesc = _desc[1]
@@ -305,9 +420,12 @@ function ExerciseFormModal(props) {
     var sets = _sets[0], setSets = _sets[1]
     var reps = _reps[0], setReps = _reps[1]
     var imgUrl = _img[0], setImgUrl = _img[1]
+    var videoUrl = _videoUrl[0], setVideoUrl = _videoUrl[1]
     var uploading = _uploading[0], setUploading = _uploading[1]
+    var uploadingVideo = _uploadingVideo[0], setUploadingVideo = _uploadingVideo[1]
     var preview = _preview[0], setPreview = _preview[1]
     var imgError = _imgError[0], setImgError = _imgError[1]
+    var videoError = _videoError[0], setVideoError = _videoError[1]
 
     var displayImg = preview || (imgUrl ? optimizeUrl(imgUrl, 640, 400) : null)
 
@@ -341,6 +459,30 @@ function ExerciseFormModal(props) {
         setImgError(null)
     }
 
+    async function handleVideoFile(file) {
+        if (!file) return
+        var allowed = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo']
+        if (!allowed.includes(file.type)) { setVideoError('Formato no soportado. Usa MP4, WebM o MOV'); return }
+        if (file.size > 100 * 1024 * 1024) { setVideoError('El video no debe superar 100MB'); return }
+        setVideoError(null)
+        setUploadingVideo(true)
+        try {
+            var url = await uploadVideoToCloudinary(file, 'rafagym/exercises/videos')
+            setVideoUrl(url)
+        } catch (err) {
+            console.error('Video upload error:', err)
+            setVideoError('Error al subir el video. Intenta de nuevo.')
+        } finally {
+            setUploadingVideo(false)
+        }
+    }
+
+    function removeVideo() {
+        setVideoUrl('')
+        setVideoError(null)
+        if (videoRef.current) videoRef.current.value = ''
+    }
+
     function doSave() {
         onSave({
             name: name,
@@ -349,7 +491,8 @@ function ExerciseFormModal(props) {
             equipment: equip,
             sets_recommended: sets,
             reps_recommended: reps,
-            image_url: imgUrl || null
+            image_url: imgUrl || null,
+            video_url: videoUrl || null
         })
     }
 
@@ -394,7 +537,7 @@ function ExerciseFormModal(props) {
                             )}
                             {!displayImg && !uploading && (
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2rem', opacity: 0.3, marginBottom: '0.25rem' }}>{'📷'}</div>
+                                    <FiCamera size={32} style={{ opacity: 0.3, marginBottom: '0.25rem' }} />
                                     <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                                         Clic o arrastra una imagen aqui
                                     </span>
@@ -423,6 +566,83 @@ function ExerciseFormModal(props) {
 
                         <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
                             onChange={function (e) { handleFile(e.target.files[0]) }} />
+                    </div>
+
+                    {/* Video upload section */}
+                    <div style={{ marginBottom: 'var(--space-xl)' }}>
+                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                            <FiVideo size={14} /> Video Demostrativo <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span>
+                        </label>
+
+                        {videoUrl ? (
+                            <div>
+                                <video
+                                    src={videoUrl}
+                                    controls
+                                    style={{
+                                        width: '100%', maxHeight: 200, borderRadius: 'var(--radius-lg)',
+                                        background: '#000', objectFit: 'contain'
+                                    }}
+                                />
+                                <div style={{ textAlign: 'center', marginTop: '0.375rem' }}>
+                                    <button onClick={removeVideo}
+                                        style={{
+                                            background: 'none', border: 'none', color: 'var(--danger)',
+                                            cursor: 'pointer', fontSize: '0.75rem',
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem'
+                                        }}>
+                                        <FiX size={12} /> Quitar video
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={function () { if (!uploadingVideo && videoRef.current) videoRef.current.click() }}
+                                onDragOver={function (e) { e.preventDefault() }}
+                                onDrop={function (e) { e.preventDefault(); handleVideoFile(e.dataTransfer.files[0]) }}
+                                style={{
+                                    width: '100%', height: 120,
+                                    borderRadius: 'var(--radius-lg)',
+                                    cursor: uploadingVideo ? 'wait' : 'pointer',
+                                    background: 'var(--dark-600)',
+                                    border: '2px dashed var(--border-subtle)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexDirection: 'column', gap: '0.5rem',
+                                    position: 'relative', overflow: 'hidden',
+                                    transition: 'border-color 0.2s'
+                                }}
+                            >
+                                {uploadingVideo ? (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: 'rgba(0,0,0,0.6)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexDirection: 'column', gap: '0.5rem'
+                                    }}>
+                                        <div className="spinner" style={{ width: 28, height: 28 }}></div>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Subiendo video...</span>
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center' }}>
+                                        <FiVideo size={28} style={{ opacity: 0.3, marginBottom: '0.25rem' }} />
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block' }}>
+                                            Clic o arrastra un video aqui
+                                        </span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', opacity: 0.7 }}>
+                                            MP4, WebM o MOV — máx. 100MB
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {videoError && (
+                            <p style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '0.375rem' }}>{videoError}</p>
+                        )}
+
+                        <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                            style={{ display: 'none' }}
+                            onChange={function (e) { handleVideoFile(e.target.files[0]) }} />
                     </div>
 
                     <div className="form-grid">
@@ -476,7 +696,7 @@ function ExerciseFormModal(props) {
 
                 <div className="modal-footer">
                     <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-                    <button className="btn btn-primary" onClick={doSave} disabled={!name || uploading}>
+                    <button className="btn btn-primary" onClick={doSave} disabled={!name || uploading || uploadingVideo}>
                         {exercise ? 'Guardar Cambios' : 'Crear Ejercicio'}
                     </button>
                 </div>

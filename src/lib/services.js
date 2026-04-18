@@ -474,10 +474,6 @@ export async function getDashboardStats() {
     }
 }
 
-// ============================================================
-// ROUTINE TEMPLATES — Plantillas Predefinidas
-// ============================================================
-
 export async function getRoutineTemplates() {
     const { data, error } = await supabase
         .from('routine_templates')

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-    FiHome, FiUsers, FiCalendar, FiDollarSign, FiSettings, FiLogOut, FiMenu, FiX, FiMapPin, FiActivity, FiTarget, FiSun, FiMoon, FiAward, FiUserPlus, FiBookOpen, FiBarChart2, FiChevronLeft, FiUser
+    FiHome, FiUsers, FiCalendar, FiDollarSign, FiSettings, FiLogOut, FiMenu, FiX, FiMapPin, FiActivity, FiTarget, FiSun, FiMoon, FiAward, FiUserPlus, FiBookOpen, FiBarChart2, FiChevronLeft, FiUser, FiZap
 } from 'react-icons/fi'
 import { getOptimizedUrl } from '../lib/cloudinary'
 import './AdminLayout.css'
@@ -51,7 +51,7 @@ export default function AdminLayout() {
             <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
                 <div className="sidebar-header">
                     <NavLink to="/admin/dashboard" className="sidebar-logo">
-                        <span className="logo-icon">💪</span>
+                        <span className="logo-icon"><FiZap size={22} /></span>
                         {!collapsed && <span className="logo-text">Rafa<span className="gradient-text">Gym</span></span>}
                     </NavLink>
                     <button className="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)} aria-label="Toggle sidebar">

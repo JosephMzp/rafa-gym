@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiSearch, FiCheckCircle, FiClock, FiFilter, FiPlus, FiX, FiMapPin, FiAlertCircle, FiUser } from 'react-icons/fi'
+import { FiSearch, FiCheckCircle, FiClock, FiFilter, FiPlus, FiX, FiMapPin, FiAlertCircle, FiUser, FiList, FiCalendar, FiLock, FiInfo } from 'react-icons/fi'
 import { getClients, getAttendances, getLocations, createAttendance } from '../../lib/services'
 
 export default function Attendance() {
@@ -99,7 +99,7 @@ export default function Attendance() {
                         ))}
                     </tbody>
                 </table>
-                {filtered.length === 0 && <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-title">No hay registros de asistencia</div></div>}
+                {filtered.length === 0 && <div className="empty-state"><div className="empty-state-icon"><FiList size={32} /></div><div className="empty-state-title">No hay registros de asistencia</div></div>}
             </div>
 
             {/* Registro de asistencia */}
@@ -202,7 +202,7 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
                 <div className="modal-header">
-                    <h2 className="modal-title">📋 Registrar Asistencia</h2>
+                    <h2 className="modal-title"><FiList size={18} style={{marginRight:'0.375rem'}} /> Registrar Asistencia</h2>
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
                 <div className="modal-body">
@@ -210,12 +210,12 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
                             <div className="form-group">
-                                <label className="form-label">📅 Fecha</label>
+                                <label className="form-label"><FiCalendar size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> Fecha</label>
                                 <input className="form-input" type="text" value={todayStr} readOnly
                                     style={{ background: 'var(--dark-600)', cursor: 'not-allowed', fontWeight: 600 }} />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">🕐 Hora</label>
+                                <label className="form-label"><FiClock size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> Hora</label>
                                 <input className="form-input" type="text" value={timeStr} readOnly
                                     style={{ background: 'var(--dark-600)', cursor: 'not-allowed', fontWeight: 600 }} />
                             </div>
@@ -340,7 +340,7 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                                             style={{ background: 'var(--dark-600)', cursor: 'not-allowed', fontWeight: 600 }}
                                         />
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                            🔒 Membresía Estándar: solo puede ingresar a su sede registrada
+                                            <FiLock size={12} /> Membresía Estándar: solo puede ingresar a su sede registrada
                                         </span>
                                     </>
                                 )}
@@ -415,7 +415,7 @@ function AttendanceModal({ clients, locations, attendances, onSuccess, onClose }
                                 background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)',
                                 fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem'
                             }}>
-                                ℹ️ {selectedClient.name} tiene {todayAttCount} ingreso(s) registrado(s) hoy
+                                <FiInfo size={14} /> {selectedClient.name} tiene {todayAttCount} ingreso(s) registrado(s) hoy
                             </div>
                         )}
                     </div>
