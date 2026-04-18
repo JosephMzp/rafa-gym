@@ -324,7 +324,7 @@ export async function getFitGoldClients() {
             )
         `)
         .eq('client_memberships.status', 'active')
-        .in('client_memberships.membership_types.short_name', ['gold', 'fit'])
+        .in('client_memberships.membership_types.name', ['Gold', 'Fit'])
 
     if (response.error) {
         console.error('Error fetching fit/gold clients:', response.error)
@@ -472,4 +472,129 @@ export async function getDashboardStats() {
         console.error('getDashboardStats error:', err)
         return { totalClients: 0, activeClients: 0, todayAttendances: 0, monthlyRevenue: 0, expiringSoon: [] }
     }
+}
+
+// ============================================================
+// ROUTINE TEMPLATES — Plantillas Predefinidas
+// ============================================================
+
+export async function getRoutineTemplates() {
+    const { data, error } = await supabase
+        .from('routine_templates')
+        .select('*, routine_template_exercises(count)')
+        .eq('status', 'active')
+        .order('name')
+    if (error) throw error
+    return data || []
+}
+
+export async function createRoutineTemplate(templateData) {
+    const { data, error } = await supabase
+        .from('routine_templates')
+        .insert(templateData)
+        .select()
+        .single()
+    if (error) throw error
+    return data
+}
+
+export async function updateRoutineTemplate(id, updates) {
+    const { error } = await supabase
+        .from('routine_templates')
+        .update(updates)
+        .eq('id', id)
+    if (error) throw error
+}
+
+export async function deleteRoutineTemplate(id) {
+    const { error } = await supabase
+        .from('routine_templates')
+        .update({ status: 'inactive' })
+        .eq('id', id)
+    if (error) throw error
+}
+
+export async function getTemplateExercises(templateId) {
+    const { data, error } = await supabase
+        .from('routine_template_exercises')
+        .select('*, exercises(id, name, muscle_group, equipment)')
+        .eq('template_id', templateId)
+        .order('order_index')
+    if (error) throw error
+    return data || []
+}
+
+export async function saveTemplateExercises(templateId, exerciseList) {
+    const { error: delErr } = await supabase
+        .from('routine_template_exercises')
+        .delete()
+        .eq('template_id', templateId)
+    if (delErr) throw delErr
+    if (exerciseList && exerciseList.length > 0) {
+        const rows = exerciseList.map((ex, i) => ({
+            template_id: templateId,
+            exercise_id: ex.exercise_id,
+            day: ex.day || null,
+            sets: ex.sets || 3,
+            reps: ex.reps || '10-12',
+            rest_seconds: ex.rest_seconds || 60,
+            order_index: i + 1
+        }))
+        const { error } = await supabase.from('routine_template_exercises').insert(rows)
+        if (error) throw error
+    }
+}
+
+// ============================================================
+// CLIENT ROUTINE SUBSCRIPTIONS — Suscripciones de clientes
+// ============================================================
+
+export async function getClientSubscriptions(clientId) {
+    const { data, error } = await supabase
+        .from('client_routine_subscriptions')
+        .select('*, template:routine_templates(*)')
+        .eq('client_id', clientId)
+        .eq('status', 'active')
+    if (error) throw error
+    return data || []
+}
+
+export async function getTemplateSubscribers(templateId) {
+    const { data, error } = await supabase
+        .from('client_routine_subscriptions')
+        .select('*, client:clients(id, name, photo_url)')
+        .eq('template_id', templateId)
+        .eq('status', 'active')
+    if (error) throw error
+    return data || []
+}
+
+export async function getAllSubscriptions() {
+    const { data, error } = await supabase
+        .from('client_routine_subscriptions')
+        .select('*, client:clients(id, name, photo_url), template:routine_templates(id, name, emoji, color)')
+        .eq('status', 'active')
+        .order('subscribed_at', { ascending: false })
+    if (error) throw error
+    return data || []
+}
+
+export async function subscribeToTemplate(clientId, templateId) {
+    const { data, error } = await supabase
+        .from('client_routine_subscriptions')
+        .upsert({ client_id: clientId, template_id: templateId, status: 'active' },
+            { onConflict: 'client_id,template_id' })
+        .select()
+        .single()
+    if (error) throw error
+    return data
+}
+
+export async function unsubscribeFromTemplate(clientId, templateId) {
+    const { error } = await supabase
+        .from('client_routine_subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('client_id', clientId)
+        .eq('template_id', templateId)
+    if (error) throw error
 }

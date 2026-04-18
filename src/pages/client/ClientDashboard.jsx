@@ -5,8 +5,12 @@ import { supabase } from '../../lib/supabase'
 import {
     FiUser, FiAward, FiCalendar, FiDollarSign, FiActivity,
     FiBookOpen, FiCamera, FiMapPin, FiClock, FiPhone, FiMail,
-    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon, FiPlus, FiCheck, FiUsers
+    FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon, FiPlus, FiCheck, FiUsers, FiTarget
 } from 'react-icons/fi'
+import {
+    getClientSubscriptions, subscribeToTemplate, unsubscribeFromTemplate,
+    getRoutineTemplates, getTemplateExercises
+} from '../../lib/services'
 
 var CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 var UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
@@ -79,6 +83,10 @@ export default function ClientDashboard() {
     var _allClasses = useState([])
     var _enrolling = useState(false)
     var _enrollMsg = useState(null)
+    var _subscriptions = useState([])
+    var _allTemplates = useState([])
+    var _showBrowseRoutines = useState(false)
+    var _browseExercises = useState({})
 
     var loading = _loading[0], setLoading = _loading[1]
     var membership = _membership[0], setMembership = _membership[1]
@@ -101,6 +109,10 @@ export default function ClientDashboard() {
     var allClasses = _allClasses[0], setAllClasses = _allClasses[1]
     var enrolling = _enrolling[0], setEnrolling = _enrolling[1]
     var enrollMsg = _enrollMsg[0], setEnrollMsg = _enrollMsg[1]
+    var subscriptions = _subscriptions[0], setSubscriptions = _subscriptions[1]
+    var allTemplates = _allTemplates[0], setAllTemplates = _allTemplates[1]
+    var showBrowseRoutines = _showBrowseRoutines[0], setShowBrowseRoutines = _showBrowseRoutines[1]
+    var browseExercises = _browseExercises[0], setBrowseExercises = _browseExercises[1]
     var fileRef = useRef(null)
 
     useEffect(function () {
@@ -177,6 +189,14 @@ export default function ClientDashboard() {
                 .eq('status', 'active')
                 .order('name')
             setAllClasses(allClsRes.data || [])
+
+            // suscripciones a rutinas predefinidas
+            var subs = await getClientSubscriptions(clientId)
+            setSubscriptions(subs)
+
+            // todas las plantillas disponibles
+            var templates = await getRoutineTemplates()
+            setAllTemplates(templates)
 
         } catch (err) { console.error('loadClientData error:', err) }
         finally { setLoading(false) }
@@ -606,8 +626,8 @@ export default function ClientDashboard() {
                     <div className="stat-card">
                         <div className="stat-card-icon" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}><FiActivity /></div>
                         <div className="stat-card-content">
-                            <div className="stat-card-label">Rutina</div>
-                            <div className="stat-card-value" style={{ fontSize: '1rem' }}>{routine ? routine.objective : 'Sin asignar'}</div>
+                            <div className="stat-card-label">Rutinas</div>
+                            <div className="stat-card-value" style={{ fontSize: '1.5rem' }}>{subscriptions.length}</div>
                         </div>
                     </div>
                     <div className="stat-card">
@@ -650,62 +670,53 @@ export default function ClientDashboard() {
                         )}
                     </div>
 
-                    {/* Rutina */}
+                    {/* Mis Rutinas - Plantillas suscritas */}
                     <div className="card">
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FiActivity color="var(--primary-400)" /> Mi Rutina
-                        </h3>
-                        {routine ? (
-                            <div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: 'var(--space-md)' }}>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        <strong>Objetivo:</strong> {routine.objective}
-                                    </div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        <strong>Nivel:</strong>{' '}
-                                        <span className={'badge ' + (routine.level === 'Principiante' ? 'badge-success' : routine.level === 'Intermedio' ? 'badge-warning' : 'badge-danger')}>
-                                            {routine.level}
-                                        </span>
-                                    </div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        <strong>Entrenador:</strong> {routine.trainer_name}
-                                    </div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        <strong>Dias:</strong>{' '}
-                                        {(routine.days || []).map(function (d) {
-                                            return <span key={d} className="badge badge-primary" style={{ marginLeft: '0.25rem' }}>{d}</span>
-                                        })}
-                                    </div>
-                                </div>
-                                {/* Ejercicios*/}
-                                {routine.routine_exercises && routine.routine_exercises.length > 0 && (
-                                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                                            Ejercicios
-                                        </div>
-                                        {routine.routine_exercises.slice(0, 6).map(function (re, i) {
-                                            return (
-                                                <div key={re.id || i} style={{
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                    padding: '0.375rem 0', fontSize: '0.8125rem'
-                                                }}>
-                                                    <span style={{ color: 'var(--text-secondary)' }}>{re.exercises?.name || 'Ejercicio'}</span>
-                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{re.sets} x {re.reps}</span>
-                                                </div>
-                                            )
-                                        })}
-                                        {routine.routine_exercises.length > 6 && (
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                                +{routine.routine_exercises.length - 6} ejercicios mas
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                <FiActivity color="var(--primary-400)" /> Mis Rutinas
+                            </h3>
+                            <button className="btn btn-sm btn-primary" onClick={function () { setShowBrowseRoutines(true) }}>
+                                <FiPlus size={13} /> Explorar
+                            </button>
+                        </div>
+                        {subscriptions.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
+                                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏋️</div>
+                                <p style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>No estás suscrito a ninguna rutina</p>
+                                <button className="btn btn-sm btn-secondary" onClick={function () { setShowBrowseRoutines(true) }}>Ver rutinas disponibles</button>
                             </div>
                         ) : (
-                            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'🏋️'}</div>
-                                <p style={{ fontSize: '0.875rem' }}>No tienes rutina asignada</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                                {subscriptions.map(function (sub) {
+                                    var t = sub.template
+                                    if (!t) return null
+                                    return (
+                                        <div key={sub.id} style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-md)',
+                                            background: 'var(--dark-600)', borderLeft: '3px solid ' + (t.color || '#8b5cf6')
+                                        }}>
+                                            <span style={{ fontSize: '1.5rem' }}>{t.emoji}</span>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{t.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    {t.level} • {t.duration} • {(t.days || []).join(', ')}
+                                                </div>
+                                            </div>
+                                            <button
+                                                className="btn btn-ghost btn-icon"
+                                                style={{ width: 28, height: 28, color: 'var(--danger)', fontSize: '0.8rem' }}
+                                                title="Cancelar suscripción"
+                                                onClick={async function () {
+                                                    await unsubscribeFromTemplate(user.id, t.id)
+                                                    loadClientData()
+                                                }}>
+                                                <FiX size={13} />
+                                            </button>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         )}
                     </div>
@@ -904,6 +915,17 @@ export default function ClientDashboard() {
                     )
                 })()}
 
+                {/* Browse Routines Modal */}
+                {showBrowseRoutines && (
+                    <BrowseRoutinesModal
+                        templates={allTemplates}
+                        subscriptions={subscriptions}
+                        clientId={user.id}
+                        onClose={function () { setShowBrowseRoutines(false) }}
+                        onChanged={function () { loadClientData() }}
+                    />
+                )}
+
                 {/* Personal Info */}
                 <div className="card" id="mis-datos">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
@@ -978,6 +1000,195 @@ export default function ClientDashboard() {
                             })}
                         </div>
                     )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ─── Browse Routines Modal ────────────────────────────────────
+var levelColor = { 'Principiante': '#10b981', 'Intermedio': '#f59e0b', 'Avanzado': '#ef4444' }
+
+function BrowseRoutinesModal({ templates, subscriptions, clientId, onClose, onChanged }) {
+    var [filterLevel, setFilterLevel] = useState('all')
+    var [search, setSearch] = useState('')
+    var [selectedTemplate, setSelectedTemplate] = useState(null)
+    var [templateExercises, setTemplateExercises] = useState([])
+    var [loadingExs, setLoadingExs] = useState(false)
+    var [acting, setActing] = useState(false)
+
+    var subscribedIds = subscriptions.map(function (s) { return s.template_id })
+
+    var filtered = templates.filter(function (t) {
+        var ms = !search || t.name?.toLowerCase().includes(search.toLowerCase()) || t.objective?.toLowerCase().includes(search.toLowerCase())
+        var fl = filterLevel === 'all' || t.level === filterLevel
+        return ms && fl
+    })
+
+    async function handleSelect(tmpl) {
+        setSelectedTemplate(tmpl)
+        setLoadingExs(true)
+        try {
+            var exs = await getTemplateExercises(tmpl.id)
+            setTemplateExercises(exs)
+        } catch (err) { console.error(err) }
+        finally { setLoadingExs(false) }
+    }
+
+    async function handleToggle(tmpl) {
+        if (acting) return
+        setActing(true)
+        try {
+            if (subscribedIds.includes(tmpl.id)) {
+                await unsubscribeFromTemplate(clientId, tmpl.id)
+            } else {
+                await subscribeToTemplate(clientId, tmpl.id)
+            }
+            onChanged()
+        } catch (err) { console.error(err) }
+        finally { setActing(false) }
+    }
+
+    var byDay = {}
+    templateExercises.forEach(function (ex) {
+        var day = ex.day || 'General'
+        if (!byDay[day]) byDay[day] = []
+        byDay[day].push(ex)
+    })
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal modal-lg" onClick={function (e) { e.stopPropagation() }}
+                style={{ maxWidth: 860, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="modal-header">
+                    <h2 className="modal-title">🏋️ Explorar Rutinas Disponibles</h2>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
+                </div>
+
+                <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                    {/* Left: template list */}
+                    <div style={{ width: 340, borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border-subtle)' }}>
+                            <div className="search-bar" style={{ marginBottom: '0.5rem' }}>
+                                <span className="search-bar-icon">🔍</span>
+                                <input placeholder="Buscar rutina..." value={search} onChange={function (e) { setSearch(e.target.value) }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                                {['all', 'Principiante', 'Intermedio', 'Avanzado'].map(function (l) {
+                                    return (
+                                        <button key={l}
+                                            className={'btn btn-sm ' + (filterLevel === l ? 'btn-primary' : 'btn-secondary')}
+                                            onClick={function () { setFilterLevel(l) }}
+                                            style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+                                            {l === 'all' ? 'Todos' : l}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                        <div style={{ overflowY: 'auto', flex: 1 }}>
+                            {filtered.map(function (tmpl) {
+                                var isSubscribed = subscribedIds.includes(tmpl.id)
+                                var isSelected = selectedTemplate?.id === tmpl.id
+                                var lc = levelColor[tmpl.level] || '#94a3b8'
+                                return (
+                                    <div key={tmpl.id}
+                                        onClick={function () { handleSelect(tmpl) }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.875rem 1rem', cursor: 'pointer',
+                                            background: isSelected ? (tmpl.color + '12') : 'transparent',
+                                            borderLeft: isSelected ? ('3px solid ' + tmpl.color) : '3px solid transparent',
+                                            borderBottom: '1px solid var(--border-subtle)',
+                                            transition: 'all 0.15s'
+                                        }}>
+                                        <span style={{ fontSize: '1.5rem' }}>{tmpl.emoji}</span>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 700, fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tmpl.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: lc, fontWeight: 600 }}>{tmpl.level}</div>
+                                        </div>
+                                        {isSubscribed && (
+                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-full)', background: 'rgba(16,185,129,0.2)', color: '#10b981', whiteSpace: 'nowrap' }}>✓ Activa</span>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Right: detail */}
+                    <div style={{ flex: 1, overflow: 'auto', padding: 'var(--space-lg)' }}>
+                        {!selectedTemplate ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👈</div>
+                                <p>Selecciona una rutina para ver sus detalles</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: 'var(--space-lg)' }}>
+                                    <div style={{ width: 64, height: 64, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: selectedTemplate.color + '20', fontSize: '2rem', flexShrink: 0 }}>{selectedTemplate.emoji}</div>
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem' }}>{selectedTemplate.name}</h3>
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <span className="badge" style={{ background: (levelColor[selectedTemplate.level] || '#94a3b8') + '20', color: levelColor[selectedTemplate.level] || '#94a3b8', fontWeight: 700 }}>{selectedTemplate.level}</span>
+                                            <span className="badge badge-neutral"><FiClock size={11} style={{ marginRight: 3 }} />{selectedTemplate.duration}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className={'btn ' + (subscribedIds.includes(selectedTemplate.id) ? 'btn-danger' : 'btn-primary')}
+                                        disabled={acting}
+                                        onClick={function () { handleToggle(selectedTemplate) }}>
+                                        {acting ? 'Procesando...' : subscribedIds.includes(selectedTemplate.id) ? '✕ Cancelar' : '+ Suscribirme'}
+                                    </button>
+                                </div>
+
+                                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: 'var(--space-lg)', fontSize: '0.9375rem' }}>{selectedTemplate.description}</p>
+
+                                <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                        <FiTarget size={14} color={selectedTemplate.color} /><strong>Objetivo:</strong> {selectedTemplate.objective}
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: 'var(--space-md)' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Días de entrenamiento</div>
+                                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                        {(selectedTemplate.days || []).map(function (d) {
+                                            return <span key={d} className="badge" style={{ background: selectedTemplate.color + '20', color: selectedTemplate.color, fontWeight: 700 }}>{d}</span>
+                                        })}
+                                    </div>
+                                </div>
+
+                                {loadingExs ? <div className="spinner spinner-lg" style={{ margin: '2rem auto' }}></div> : (
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 'var(--space-md)' }}>Ejercicios por día</div>
+                                        {Object.keys(byDay).map(function (day) {
+                                            return (
+                                                <div key={day} style={{ marginBottom: 'var(--space-md)' }}>
+                                                    <span className="badge" style={{ background: selectedTemplate.color + '20', color: selectedTemplate.color, fontWeight: 700, marginBottom: '0.5rem', display: 'inline-block' }}>{day}</span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                                                        {byDay[day].map(function (ex, i) {
+                                                            var exData = ex.exercises || {}
+                                                            return (
+                                                                <div key={i} style={{
+                                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                                    padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
+                                                                    background: 'var(--dark-700)', fontSize: '0.875rem'
+                                                                }}>
+                                                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{exData.name}</span>
+                                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{ex.sets} × {ex.reps}</span>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
