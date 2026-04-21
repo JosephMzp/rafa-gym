@@ -594,3 +594,63 @@ export async function unsubscribeFromTemplate(clientId, templateId) {
         .eq('template_id', templateId)
     if (error) throw error
 }
+
+// ============================================
+// DETALLE COMPLETO DE CLIENTE
+// ============================================
+export async function getClientFullDetail(clientId) {
+    const [routinesRes, classesRes, attendancesRes, paymentsRes] = await Promise.all([
+        // Rutinas personales asignadas
+        supabase
+            .from('routines')
+            .select('id, name, goal, days_per_week, trainer_name, created_at, notes')
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false })
+            .limit(5),
+
+        // Clases matriculadas
+        supabase
+            .from('class_enrollments')
+            .select(`
+                id, enrolled_at, status,
+                class:classes(id, name, schedule, instructor, capacity, location:locations(name))
+            `)
+            .eq('client_id', clientId)
+            .eq('status', 'active')
+            .order('enrolled_at', { ascending: false }),
+
+        // Asistencias recientes
+        supabase
+            .from('attendances')
+            .select('id, check_in, location:locations(name)')
+            .eq('client_id', clientId)
+            .order('check_in', { ascending: false })
+            .limit(10),
+
+        // Pagos recientes
+        supabase
+            .from('payments')
+            .select('id, amount, date, status, concept')
+            .eq('client_id', clientId)
+            .order('date', { ascending: false })
+            .limit(5),
+    ])
+
+    return {
+        routines: routinesRes.data || [],
+        classes: (classesRes.data || []).map(e => ({
+            ...e,
+            class_name: e.class?.name || '',
+            schedule: e.class?.schedule || '',
+            instructor: e.class?.instructor || '',
+            location_name: e.class?.location?.name || '',
+        })),
+        attendances: (attendancesRes.data || []).map(a => ({
+            ...a,
+            location_name: a.location?.name || '',
+            date: new Date(a.check_in).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+            time: new Date(a.check_in).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
+        })),
+        payments: paymentsRes.data || [],
+    }
+}
