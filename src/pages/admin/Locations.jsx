@@ -21,17 +21,30 @@ export default function Locations() {
 
     if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>
 
+    const locationImages = {
+        'RafaGym - Sede Av. San Juan': '/av-san-juan.png',
+        'RafaGym - Sede Pebal': '/PEBAL.png',
+        'RafaGym - Sede Parque 12': '/12-NOV.png'
+    }
+
     return (
         <div>
             <div className="page-header"><div><h1 className="page-title">Sedes</h1><p className="page-subtitle">Administra las sedes del gimnasio</p></div></div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--space-xl)' }}>
                 {locations.map(loc => (
-                    <div key={loc.id} className="card" style={{ padding: 0 }}>
-                        <div style={{ padding: 'var(--space-xl)', background: 'linear-gradient(135deg, rgba(249,115,22,0.08), rgba(234,88,12,0.03))', borderBottom: '1px solid var(--border-subtle)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div><h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>{loc.name}</h3><span className={`badge ${loc.status === 'active' ? 'badge-success' : 'badge-danger'}`}>{loc.status === 'active' ? 'Activa' : 'Inactiva'}</span></div>
-                                <div style={{ fontSize: '2rem' }}>🏢</div>
+                    <div key={loc.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                        <div style={{ 
+                            position: 'relative', 
+                            height: '200px', 
+                            backgroundImage: `url(${locationImages[loc.name] || '/av-san-juan.png'})`, 
+                            backgroundSize: 'cover', 
+                            backgroundPosition: 'center', 
+                            borderBottom: '1px solid var(--border-subtle)' 
+                        }}>
+                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0.1) 100%)' }}></div>
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 'var(--space-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10 }}>
+                                <div><h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#fff' }}>{loc.name}</h3><span className={`badge ${loc.status === 'active' ? 'badge-success' : 'badge-danger'}`} style={{ backdropFilter: 'blur(4px)' }}>{loc.status === 'active' ? 'Activa' : 'Inactiva'}</span></div>
                             </div>
                         </div>
                         <div style={{ padding: 'var(--space-xl)' }}>

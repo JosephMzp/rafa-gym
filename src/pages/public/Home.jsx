@@ -63,7 +63,7 @@ export default function Home() {
                     <div className="hero-visual animate-fade-in">
                         <div className="hero-image-card glass">
                             <div className="hero-image-placeholder">
-                                <img src="/captura.png" alt="Hombre levantando pesas" className="hero-image" />
+                                <img src="/Hombre_levantando_pesa.png" alt="Hombre levantando pesas" className="hero-image" />
                             </div>
                         </div>
                     </div>
@@ -144,9 +144,9 @@ export default function Home() {
                                 </div>
                                 <div className="location-info">
                                     <h3 className="location-name">{loc.name}</h3>
-                                    <p className="location-address"><FiMapPin size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> {loc.address}</p>
-                                    <p className="location-phone"><FiPhone size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> {loc.phone}</p>
-                                    <p className="location-hours"><FiClock size={13} style={{marginRight:'0.25rem', verticalAlign:'middle'}} /> {loc.hours}</p>
+                                    <p className="location-address"><FiMapPin size={13} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} /> {loc.address}</p>
+                                    <p className="location-phone"><FiPhone size={13} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} /> {loc.phone}</p>
+                                    <p className="location-hours"><FiClock size={13} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} /> {loc.hours}</p>
                                     <div className="location-services">
                                         {loc.services.map((s, j) => (
                                             <span key={j} className="badge badge-primary">{s}</span>
