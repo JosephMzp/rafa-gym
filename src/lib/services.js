@@ -155,7 +155,9 @@ export async function getClients() {
         .order('name')
     if (error) { console.error('getClients error:', error); return [] }
     return (data || []).map(c => {
-        const activeMembership = c.client_memberships?.find(m => m.status === 'active')
+        // Tomar la membresía activa con el end_date más reciente
+        const activeMemberships = (c.client_memberships || []).filter(m => m.status === 'active')
+        const activeMembership = activeMemberships.sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0] || null
         return {
             ...c,
             membership_type: activeMembership?.membership_type || null,
@@ -188,6 +190,13 @@ export async function deleteClient(id) {
 // MEMBRESÍAS DE CLIENTES
 // ============================================
 export async function createClientMembership(data) {
+    // Primero expirar cualquier membresía activa anterior del cliente
+    await supabase
+        .from('client_memberships')
+        .update({ status: 'expired' })
+        .eq('client_id', data.client_id)
+        .eq('status', 'active')
+
     const { data: result, error } = await supabase.from('client_memberships').insert(data).select().single()
     if (error) throw error
     return result
@@ -603,8 +612,9 @@ export async function getClientFullDetail(clientId) {
         // Rutinas personales asignadas
         supabase
             .from('routines')
-            .select('id, name, goal, days_per_week, trainer_name, created_at, notes')
+            .select('id, name, objective, level, duration, days, trainer_name, created_at, notes')
             .eq('client_id', clientId)
+            .eq('status', 'active')
             .order('created_at', { ascending: false })
             .limit(5),
 
@@ -653,4 +663,61 @@ export async function getClientFullDetail(clientId) {
         })),
         payments: paymentsRes.data || [],
     }
+}
+
+// ============================================================
+// MEDIDAS CORPORALES (body_measurements)
+// ============================================================
+export async function getMeasurements() {
+    const { data, error } = await supabase
+        .from('body_measurements')
+        .select('*, client:clients(id, name, photo_url), registrado_por_staff:staff!registrado_por(id, name)')
+        .order('fecha_medicion', { ascending: false })
+    if (error) { console.error('getMeasurements error:', error); return [] }
+    return (data || []).map(m => ({
+        ...m,
+        client_name: m.client?.name || '',
+        client_photo: m.client?.photo_url || null,
+        registrador_name: m.registrado_por_staff?.name || 'Cliente'
+    }))
+}
+
+export async function getClientMeasurements(clientId) {
+    const { data, error } = await supabase
+        .from('body_measurements')
+        .select('*, registrado_por_staff:staff!registrado_por(id, name)')
+        .eq('client_id', clientId)
+        .order('fecha_medicion', { ascending: true })
+    if (error) { console.error('getClientMeasurements error:', error); return [] }
+    return (data || []).map(m => ({
+        ...m,
+        registrador_name: m.registrado_por_staff?.name || 'Cliente'
+    }))
+}
+
+export async function createMeasurement(measurementData) {
+    const { data, error } = await supabase
+        .from('body_measurements')
+        .insert(measurementData)
+        .select()
+        .single()
+    if (error) throw error
+    return data
+}
+
+export async function updateMeasurement(id, updates) {
+    const { data, error } = await supabase
+        .from('body_measurements')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw error
+    return data
+}
+
+export async function deleteMeasurement(id) {
+    const { error } = await supabase.from('body_measurements').delete().eq('id', id)
+    if (error) throw error
+    return true
 }

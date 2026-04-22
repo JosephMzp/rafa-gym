@@ -23,6 +23,7 @@ import Reports from './pages/admin/Reports'
 import Staff from './pages/admin/Staff'
 const Exercises = lazy(() => import('./pages/admin/Exercises'))
 const Profile = lazy(() => import('./pages/admin/Profile'))
+const Measurements = lazy(() => import('./pages/admin/Measurements'))
 
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
@@ -68,6 +69,7 @@ export default function App() {
                 <Route path="routines" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Routines /></Suspense>} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="staff" element={<Staff />} />
+                <Route path="measurements" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Measurements /></Suspense>} />
                 <Route path="exercises" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Exercises /></Suspense>} />
                 <Route path="profile" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
             </Route>

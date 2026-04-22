@@ -133,14 +133,16 @@ export default function ClientDashboard() {
         try {
             var clientId = user.id
 
-            // membresia
+            // membresia — ordenar por end_date DESC para tomar siempre la más reciente
             var memRes = await supabase
                 .from('client_memberships')
-                .select('*, membership_type:membership_types(id, name, price)')
+                .select('*, membership_type:membership_types(id, name, price, color, icon, features, duration_days)')
                 .eq('client_id', clientId)
                 .eq('status', 'active')
-                .single()
-            if (memRes.data) setMembership(memRes.data)
+                .order('end_date', { ascending: false })
+                .limit(1)
+            if (memRes.data && memRes.data.length > 0) setMembership(memRes.data[0])
+            else setMembership(null)
 
             // sede
             if (user.location_id) {
@@ -604,8 +606,6 @@ export default function ClientDashboard() {
                         </div>
                     )
                 })()}
-                var today = new Date()
-                var calMonth = calendarMonth || new Date(today.getFullYear(), today.getMonth(), 1)
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
                     <div className="stat-card">

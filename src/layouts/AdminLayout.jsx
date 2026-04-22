@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-    FiHome, FiUsers, FiCalendar, FiDollarSign, FiSettings, FiLogOut, FiMenu, FiX, FiMapPin, FiActivity, FiTarget, FiSun, FiMoon, FiAward, FiUserPlus, FiBookOpen, FiBarChart2, FiChevronLeft, FiUser, FiZap
+    FiHome, FiUsers, FiCalendar, FiDollarSign, FiSettings, FiLogOut, FiMenu, FiX, FiMapPin, FiActivity, FiTarget, FiSun, FiMoon, FiAward, FiUserPlus, FiBookOpen, FiBarChart2, FiChevronLeft, FiUser, FiZap, FiSliders
 } from 'react-icons/fi'
 import { getOptimizedUrl } from '../lib/cloudinary'
 import './AdminLayout.css'
@@ -31,6 +31,7 @@ export default function AdminLayout() {
     const menuItems = [
         { path: '/admin/dashboard', label: 'Dashboard', icon: FiHome },
         { path: '/admin/clients', label: 'Clientes', icon: FiUsers },
+        { path: '/admin/measurements', label: 'Medidas', icon: FiSliders },
         { path: '/admin/attendance', label: 'Asistencias', icon: FiCalendar },
         { path: '/admin/payments', label: 'Pagos', icon: FiDollarSign },
         { path: '/admin/memberships', label: 'Membresías', icon: FiAward },

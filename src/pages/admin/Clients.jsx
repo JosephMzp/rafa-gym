@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
     FiSearch, FiPlus, FiEdit2, FiEye, FiUserX, FiUserCheck, FiX,
     FiUser, FiPhone, FiMail, FiMapPin, FiCalendar, FiActivity,
     FiAward, FiClock, FiDollarSign, FiBookOpen, FiZap, FiAlertCircle,
-    FiTrendingUp, FiCheckCircle
+    FiTrendingUp, FiCheckCircle, FiSliders, FiExternalLink
 } from 'react-icons/fi'
-import { getClients, getMembershipTypes, getLocations, createClient, updateClient, getClientFullDetail } from '../../lib/services'
+import { getClients, getMembershipTypes, getLocations, createClient, updateClient, getClientFullDetail, getClientMeasurements } from '../../lib/services'
 import { getOptimizedUrl } from '../../lib/cloudinary'
 import ImageUpload from '../../components/ImageUpload'
 
@@ -198,6 +199,7 @@ function ClientDetailModal({ client, onClose, onEdit }) {
     const tabs = [
         { id: 'info', label: 'Perfil', icon: <FiUser size={14} /> },
         { id: 'membership', label: 'Membresía', icon: <FiAward size={14} /> },
+        { id: 'measurements', label: 'Medidas', icon: <FiSliders size={14} /> },
         { id: 'routines', label: 'Rutinas', icon: <FiZap size={14} /> },
         { id: 'classes', label: 'Clases', icon: <FiBookOpen size={14} /> },
         { id: 'attendance', label: 'Asistencia', icon: <FiActivity size={14} /> },
@@ -300,6 +302,7 @@ function ClientDetailModal({ client, onClose, onEdit }) {
                         <>
                             {activeTab === 'info' && <TabInfo client={client} />}
                             {activeTab === 'membership' && <TabMembership client={client} mp={mp} color={color} />}
+                            {activeTab === 'measurements' && <TabMeasurements clientId={client.id} clientName={client.name} />}
                             {activeTab === 'routines' && <TabRoutines routines={detail?.routines || []} loading={loadingDetail} />}
                             {activeTab === 'classes' && <TabClasses classes={detail?.classes || []} loading={loadingDetail} />}
                             {activeTab === 'attendance' && <TabAttendance attendances={detail?.attendances || []} loading={loadingDetail} />}
@@ -623,6 +626,75 @@ function TabPayments({ payments, loading }) {
                     </div>
                 </div>
             ))}
+        </div>
+    )
+}
+
+/* ── Tab: Medidas ── */
+function TabMeasurements({ clientId, clientName }) {
+    const [measurements, setMeasurements] = useState([])
+    const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        getClientMeasurements(clientId)
+            .then(d => setMeasurements([...d].reverse().slice(0, 5)))
+            .finally(() => setLoading(false))
+    }, [clientId])
+
+    if (loading) return <LoadingTab />
+
+    const latest = measurements[0]
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    {measurements.length > 0 ? `Últimas ${measurements.length} mediciones` : 'Sin mediciones registradas'}
+                </div>
+                <button className="btn btn-secondary btn-sm"
+                    onClick={() => { navigate('/admin/measurements', { state: { clientName } }) }}>
+                    <FiExternalLink size={13} /> Ver módulo completo
+                </button>
+            </div>
+
+            {!measurements.length && (
+                <EmptyTab icon={<FiSliders />} title="Sin mediciones" desc="Este cliente aún no tiene mediciones corporales registradas." />
+            )}
+
+            {latest && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    {[
+                        { label: 'Peso', value: latest.peso_kg ? `${latest.peso_kg} kg` : '—' },
+                        { label: '% Grasa', value: latest.porcentaje_grasa ? `${latest.porcentaje_grasa}%` : '—' },
+                        { label: '% Músculo', value: latest.porcentaje_musculo ? `${latest.porcentaje_musculo}%` : '—' },
+                        { label: 'Cintura', value: latest.cintura_cm ? `${latest.cintura_cm} cm` : '—' },
+                    ].map((s, i) => (
+                        <div key={i} style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '0.875rem' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{s.label}</div>
+                            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{s.value}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {measurements.length > 0 && (
+                <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                    {measurements.map((m, i) => (
+                        <div key={m.id} style={{
+                            display: 'flex', alignItems: 'center', gap: '1rem',
+                            padding: '0.7rem 1rem',
+                            background: i % 2 === 0 ? 'var(--surface-card)' : 'transparent',
+                            borderBottom: i < measurements.length - 1 ? '1px solid var(--border-subtle)' : 'none'
+                        }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />
+                            <div style={{ flex: 1, fontSize: '0.875rem', fontWeight: 600 }}>{m.fecha_medicion}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{m.peso_kg ? `${m.peso_kg} kg` : '—'}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.registrador_name}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
