@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getClients } from '../../lib/services'
 import { getClientMeasurements, createMeasurement, deleteMeasurement } from '../../lib/services'
@@ -7,8 +7,80 @@ import {
 } from 'recharts'
 import {
     FiPlus, FiTrash2, FiSliders, FiUser, FiTrendingDown, FiTrendingUp,
-    FiChevronDown, FiX, FiSave, FiCamera, FiSearch
+    FiChevronDown, FiX, FiSave, FiCamera, FiSearch, FiActivity, FiCalendar, FiImage
 } from 'react-icons/fi'
+
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+
+async function uploadToCloudinary(file) {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', UPLOAD_PRESET)
+    fd.append('folder', 'rafagym/measurements')
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd })
+    if (!res.ok) throw new Error('Upload failed')
+    const data = await res.json()
+    return data.secure_url
+}
+
+const ImageUploadField = ({ label, url, onUpload, onRemove }) => {
+    const [uploading, setUploading] = useState(false)
+    const fileRef = useRef(null)
+
+    const handleFile = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploading(true)
+        try {
+            const secureUrl = await uploadToCloudinary(file)
+            onUpload(secureUrl)
+        } catch (err) {
+            console.error("Error uploading to cloudinary", err)
+            alert("Error al subir la imagen")
+        } finally {
+            setUploading(false)
+            if (fileRef.current) fileRef.current.value = ''
+        }
+    }
+
+    return (
+        <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+            <label className="form-label">{label}</label>
+            {url ? (
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '2px solid var(--primary-500)', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+                    <img src={url} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button type="button" onClick={onRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(239,68,68,0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#ef4444'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.9)'}>
+                        <FiX size={14} />
+                    </button>
+                </div>
+            ) : (
+                <div
+                    onClick={() => !uploading && fileRef.current?.click()}
+                    style={{ width: '100%', aspectRatio: '3/4', borderRadius: 'var(--radius-lg)', border: '2px dashed var(--border-subtle)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'wait' : 'pointer', background: 'var(--dark-800)', color: 'var(--text-secondary)', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { if(!uploading) e.currentTarget.style.borderColor = 'var(--primary-400)'; e.currentTarget.style.background = 'var(--dark-700)' }}
+                    onMouseLeave={e => { if(!uploading) e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}
+                >
+                    {uploading ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                            <div className="spinner spinner-md" />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-400)' }}>Subiendo...</span>
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                                <FiCamera size={20} color="var(--primary-400)" />
+                            </div>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Añadir foto</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>JPG, PNG</span>
+                        </>
+                    )}
+                </div>
+            )}
+            <input type="file" ref={fileRef} accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+        </div>
+    )
+}
 
 const EMPTY_FORM = {
     fecha_medicion: new Date().toISOString().split('T')[0],
@@ -100,52 +172,59 @@ export default function Measurements() {
     }))
 
     return (
-        <div style={{ padding: 'var(--space-lg)', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ padding: 'var(--space-xl)', maxWidth: 1200, margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-lg)', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2xl)', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <FiSliders style={{ color: 'var(--primary)' }} /> Medidas Corporales
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 12, margin: 0 }}>
+                        <div style={{ background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700))', padding: '10px', borderRadius: '12px', display: 'flex', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)' }}>
+                            <FiActivity style={{ color: 'white' }} size={24} />
+                        </div>
+                        Medidas Corporales
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Registro y evolución física de clientes</p>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: '1rem' }}>Registro y evolución física de clientes a lo largo del tiempo</p>
                 </div>
                 {selectedClient && (
-                    <button className="btn btn-primary" onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }}>
-                        <FiPlus /> Nueva Medición
+                    <button className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-full)', fontWeight: 700, boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)' }} onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }}>
+                        <FiPlus size={18} /> Nueva Medición
                     </button>
                 )}
             </div>
 
             {/* Client selector */}
-            <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)', border: '1px solid var(--border)' }}>
-                <label style={{ fontWeight: 600, display: 'block', marginBottom: 8 }}>Seleccionar cliente</label>
-                <div style={{ position: 'relative', maxWidth: 420 }}>
+            <div className="card glass" style={{ marginBottom: 'var(--space-xl)', borderTop: '4px solid var(--primary-500)', overflow: 'visible' }}>
+                <label style={{ fontWeight: 700, display: 'block', marginBottom: 12, color: 'var(--text-primary)', fontSize: '0.95rem' }}>Seleccionar Cliente</label>
+                <div style={{ position: 'relative', maxWidth: 480 }}>
                     <div style={{ position: 'relative' }}>
-                        <FiSearch style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                        <FiSearch style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--primary-400)', fontSize: '1.2rem' }} />
                         <input
                             className="form-input"
-                            style={{ paddingLeft: 36 }}
-                            placeholder="Buscar cliente..."
+                            style={{ paddingLeft: 44, height: 48, fontSize: '1rem', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', transition: 'all 0.2s', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}
+                            placeholder="Buscar cliente por nombre..."
                             value={search}
                             onChange={e => { setSearch(e.target.value); setShowDropdown(true) }}
                             onFocus={() => setShowDropdown(true)}
                         />
                     </div>
                     {showDropdown && filtered.length > 0 && (
-                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', zIndex: 50, boxShadow: 'var(--shadow-lg)', marginTop: 4 }}>
-                            {filtered.map(c => (
+                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', zIndex: 50, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', marginTop: 8, overflow: 'hidden' }}>
+                            {filtered.map((c, idx) => (
                                 <div key={c.id}
-                                    style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                                    style={{ padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, borderBottom: idx < filtered.length - 1 ? '1px solid var(--dark-700)' : 'none', transition: 'background 0.15s' }}
                                     onMouseDown={() => { setSelectedClient(c); setSearch(c.name); setShowDropdown(false) }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'var(--dark-700)'}
                                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                 >
-                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--primary)', flexShrink: 0 }}>
-                                        {c.name.charAt(0)}
-                                    </div>
+                                    {c.photo_url ? (
+                                        <img src={c.photo_url} alt={c.name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-500)' }} />
+                                    ) : (
+                                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(139,92,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: 'var(--primary-400)', flexShrink: 0, border: '1px solid rgba(139,92,246,0.3)' }}>
+                                            {c.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
                                     <div>
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.membership_type?.name || 'Sin membresía'}</div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{c.name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{c.membership_type?.name || 'Sin membresía'}</div>
                                     </div>
                                 </div>
                             ))}
@@ -153,10 +232,15 @@ export default function Measurements() {
                     )}
                 </div>
                 {selectedClient && (
-                    <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Cliente seleccionado:</span>
-                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{selectedClient.name}</span>
-                        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 2 }} onClick={() => { setSelectedClient(null); setSearch(''); setMeasurements([]) }}>
+                    <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, background: 'var(--dark-800)', padding: '10px 16px', borderRadius: 'var(--radius-md)', display: 'inline-flex', border: '1px solid var(--dark-700)' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Cliente actual:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {selectedClient.photo_url ? (
+                                <img src={selectedClient.photo_url} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : null}
+                            <span style={{ fontWeight: 700, color: 'var(--primary-400)' }}>{selectedClient.name}</span>
+                        </div>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 24, height: 24, marginLeft: 4 }} onClick={() => { setSelectedClient(null); setSearch(''); setMeasurements([]) }}>
                             <FiX size={14} />
                         </button>
                     </div>
@@ -164,15 +248,19 @@ export default function Measurements() {
             </div>
 
             {!selectedClient && (
-                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
-                    <FiUser size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-                    <p style={{ fontSize: '1.1rem' }}>Selecciona un cliente para ver su historial de medidas</p>
+                <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-muted)', background: 'var(--dark-800)', borderRadius: 'var(--radius-xl)', border: '1px dashed var(--border-subtle)' }}>
+                    <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
+                        <FiUser size={40} style={{ color: 'var(--text-secondary)' }} />
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Ningún cliente seleccionado</h3>
+                    <p style={{ fontSize: '1rem', maxWidth: 400, margin: '0 auto' }}>Usa el buscador de arriba para seleccionar un cliente y ver o registrar su historial de medidas.</p>
                 </div>
             )}
 
             {selectedClient && loadingM && (
-                <div style={{ textAlign: 'center', padding: '3rem' }}>
+                <div style={{ textAlign: 'center', padding: '4rem' }}>
                     <div className="spinner spinner-lg" />
+                    <div style={{ marginTop: 16, color: 'var(--text-secondary)', fontWeight: 600 }}>Cargando datos...</div>
                 </div>
             )}
 
@@ -180,24 +268,34 @@ export default function Measurements() {
                 <>
                     {/* Stats cards */}
                     {latest && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
                             {[
-                                { label: 'Peso actual', value: latest.peso_kg ? `${latest.peso_kg} kg` : '—', delta: diff('peso_kg'), unit: 'kg', invert: true },
-                                { label: '% Grasa', value: latest.porcentaje_grasa ? `${latest.porcentaje_grasa}%` : '—', delta: diff('porcentaje_grasa'), invert: true },
-                                { label: '% Músculo', value: latest.porcentaje_musculo ? `${latest.porcentaje_musculo}%` : '—', delta: diff('porcentaje_musculo'), invert: false },
-                                { label: 'Cintura', value: latest.cintura_cm ? `${latest.cintura_cm} cm` : '—', delta: diff('cintura_cm'), invert: true },
-                                { label: 'Total mediciones', value: measurements.length, delta: null },
+                                { label: 'Peso actual', value: latest.peso_kg ? `${latest.peso_kg} kg` : '—', delta: diff('peso_kg'), invert: true, icon: <FiActivity />, color: '#8b5cf6' },
+                                { label: '% Grasa', value: latest.porcentaje_grasa ? `${latest.porcentaje_grasa}%` : '—', delta: diff('porcentaje_grasa'), invert: true, icon: <FiTrendingDown />, color: '#ef4444' },
+                                { label: '% Músculo', value: latest.porcentaje_musculo ? `${latest.porcentaje_musculo}%` : '—', delta: diff('porcentaje_musculo'), invert: false, icon: <FiTrendingUp />, color: '#10b981' },
+                                { label: 'Cintura', value: latest.cintura_cm ? `${latest.cintura_cm} cm` : '—', delta: diff('cintura_cm'), invert: true, icon: <FiSliders />, color: '#f59e0b' },
+                                { label: 'Total mediciones', value: measurements.length, delta: null, icon: <FiCalendar />, color: '#3b82f6' },
                             ].map((s, i) => {
                                 const dv = s.delta !== null ? parseFloat(s.delta) : null
                                 const isGood = dv !== null ? (s.invert ? dv < 0 : dv > 0) : null
                                 return (
-                                    <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{s.value}</div>
+                                    <div key={i} className="card" style={{ position: 'relative', overflow: 'hidden', padding: '1.25rem' }}>
+                                        <div style={{ position: 'absolute', top: -15, right: -15, opacity: 0.1, color: s.color, transform: 'scale(3)' }}>
+                                            {s.icon}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                            <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${s.color}20`, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {s.icon}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+                                        </div>
+                                        <div style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: s.delta !== null ? 4 : 0 }}>{s.value}</div>
                                         {dv !== null && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontSize: '0.8rem', color: isGood ? '#10b981' : '#ef4444' }}>
-                                                {isGood ? <FiTrendingDown size={14} /> : <FiTrendingUp size={14} />}
-                                                {dv > 0 ? '+' : ''}{dv} vs anterior
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', fontWeight: 600, color: isGood ? 'var(--success)' : (dv === 0 ? 'var(--text-muted)' : 'var(--danger)'), marginTop: 8 }}>
+                                                {dv !== 0 ? (isGood ? <FiTrendingDown size={14} /> : <FiTrendingUp size={14} />) : <span style={{ opacity: 0.5 }}>—</span>}
+                                                <span style={{ background: isGood ? 'rgba(16,185,129,0.15)' : (dv === 0 ? 'transparent' : 'rgba(239,68,68,0.15)'), padding: '2px 6px', borderRadius: 4 }}>
+                                                    {dv > 0 ? '+' : ''}{dv} vs anterior
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -208,87 +306,116 @@ export default function Measurements() {
 
                     {/* Chart */}
                     {measurements.length > 1 && (
-                        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: 8 }}>
-                                <h2 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Evolución</h2>
+                        <div className="card" style={{ marginBottom: 'var(--space-xl)', padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-lg)', flexWrap: 'wrap', gap: 12 }}>
+                                <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <FiActivity color="var(--primary-400)" /> Evolución de Métricas
+                                </h2>
                                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                     {chartLines.map(l => (
                                         <button key={l.key}
                                             onClick={() => setActiveChart(prev => prev.includes(l.key) ? prev.filter(k => k !== l.key) : [...prev, l.key])}
-                                            style={{ padding: '4px 12px', borderRadius: 20, border: `2px solid ${l.color}`, background: activeChart.includes(l.key) ? l.color : 'transparent', color: activeChart.includes(l.key) ? '#fff' : l.color, fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                            style={{
+                                                padding: '6px 14px', borderRadius: 'var(--radius-full)', border: `2px solid ${l.color}`,
+                                                background: activeChart.includes(l.key) ? l.color : 'transparent',
+                                                color: activeChart.includes(l.key) ? '#fff' : l.color,
+                                                fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s',
+                                                boxShadow: activeChart.includes(l.key) ? `0 4px 12px ${l.color}40` : 'none'
+                                            }}>
                                             {l.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                            <ResponsiveContainer width="100%" height={280}>
-                                <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                    <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-                                    <YAxis tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-                                    <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                                    <Legend />
-                                    {chartLines.filter(l => activeChart.includes(l.key)).map(l => (
-                                        <Line key={l.key} type="monotone" dataKey={l.key} stroke={l.color} name={l.label} strokeWidth={2} dot={{ r: 4 }} connectNulls />
-                                    ))}
-                                </LineChart>
-                            </ResponsiveContainer>
+                            <div style={{ background: 'var(--dark-800)', borderRadius: 'var(--radius-lg)', padding: '1.5rem 1rem 0.5rem 0', border: '1px solid var(--dark-700)' }}>
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--dark-600)" vertical={false} />
+                                        <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} dy={10} />
+                                        <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} dx={-10} />
+                                        <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid var(--border-subtle)', borderRadius: 12, color: 'white', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }} itemStyle={{ fontWeight: 700 }} />
+                                        <Legend wrapperStyle={{ paddingTop: 20 }} />
+                                        {chartLines.filter(l => activeChart.includes(l.key)).map(l => (
+                                            <Line key={l.key} type="monotone" dataKey={l.key} stroke={l.color} name={l.label} strokeWidth={3} dot={{ r: 5, strokeWidth: 2, fill: 'var(--dark-900)' }} activeDot={{ r: 8, strokeWidth: 0 }} connectNulls />
+                                        ))}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
                     )}
 
                     {/* History table */}
-                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                        <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h2 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Historial ({measurements.length})</h2>
+                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)' }}>
+                            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <FiCalendar color="var(--primary-400)" /> Historial de Registros
+                                <span style={{ background: 'var(--dark-700)', padding: '2px 10px', borderRadius: 20, fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{measurements.length}</span>
+                            </h2>
                         </div>
                         {measurements.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                                <FiSliders size={36} style={{ opacity: 0.3, marginBottom: 12 }} />
-                                <p>No hay mediciones registradas aún.</p>
-                                <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }}>
-                                    <FiPlus /> Registrar primera medición
+                            <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
+                                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                                    <FiSliders size={30} style={{ color: 'var(--text-secondary)' }} />
+                                </div>
+                                <p style={{ fontSize: '1.05rem', fontWeight: 500 }}>No hay mediciones registradas aún para este cliente.</p>
+                                <button className="btn btn-primary" style={{ marginTop: 24, borderRadius: 'var(--radius-full)' }} onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }}>
+                                    <FiPlus /> Registrar la primera medición
                                 </button>
                             </div>
                         ) : (
                             <div style={{ overflowX: 'auto' }}>
-                                <table className="data-table" style={{ minWidth: 900 }}>
-                                    <thead>
+                                <table className="data-table" style={{ minWidth: 1000, margin: 0, border: 'none' }}>
+                                    <thead style={{ background: 'var(--dark-800)' }}>
                                         <tr>
-                                            <th>Fecha</th>
-                                            <th>Peso (kg)</th>
-                                            <th>% Grasa</th>
-                                            <th>% Músculo</th>
-                                            <th>Cintura cm</th>
-                                            <th>Cadera cm</th>
-                                            <th>Brazo D. cm</th>
-                                            <th>Pierna D. cm</th>
+                                            <th style={{ padding: '1rem 1.5rem' }}>Fecha</th>
+                                            <th>Peso</th>
+                                            <th>Grasa</th>
+                                            <th>Músculo</th>
+                                            <th>Cintura</th>
+                                            <th>Cadera</th>
+                                            <th>Brazos/Piernas</th>
                                             <th>Fotos</th>
                                             <th>Registró</th>
-                                            <th></th>
+                                            <th style={{ textAlign: 'right', paddingRight: '1.5rem' }}>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {[...measurements].reverse().map(m => (
-                                            <tr key={m.id}>
-                                                <td style={{ fontWeight: 600 }}>{m.fecha_medicion}</td>
-                                                <td>{m.peso_kg ?? '—'}</td>
-                                                <td>{m.porcentaje_grasa != null ? `${m.porcentaje_grasa}%` : '—'}</td>
-                                                <td>{m.porcentaje_musculo != null ? `${m.porcentaje_musculo}%` : '—'}</td>
-                                                <td>{m.cintura_cm ?? '—'}</td>
-                                                <td>{m.cadera_cm ?? '—'}</td>
-                                                <td>{m.brazo_derecho_cm ?? '—'}</td>
-                                                <td>{m.pierna_derecha_cm ?? '—'}</td>
+                                        {[...measurements].reverse().map((m, i) => (
+                                            <tr key={m.id} style={{ borderBottom: i === measurements.length - 1 ? 'none' : '1px solid var(--border-subtle)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--dark-800)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                                <td style={{ padding: '1rem 1.5rem' }}>
+                                                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                        {new Date(m.fecha_medicion).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </div>
+                                                </td>
                                                 <td>
-                                                    <div style={{ display: 'flex', gap: 4 }}>
-                                                        {m.foto_frente_url && <a href={m.foto_frente_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>Frente</a>}
-                                                        {m.foto_perfil_url && <a href={m.foto_perfil_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>Perfil</a>}
-                                                        {m.foto_espalda_url && <a href={m.foto_espalda_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>Espalda</a>}
+                                                    {m.peso_kg ? <span style={{ fontWeight: 600, color: 'var(--primary-400)' }}>{m.peso_kg} kg</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                                                </td>
+                                                <td>{m.porcentaje_grasa != null ? <span style={{ fontWeight: 600, color: '#ef4444' }}>{m.porcentaje_grasa}%</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.porcentaje_musculo != null ? <span style={{ fontWeight: 600, color: '#10b981' }}>{m.porcentaje_musculo}%</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.cintura_cm ? `${m.cintura_cm} cm` : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.cadera_cm ? `${m.cadera_cm} cm` : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                                        <span>B: {m.brazo_derecho_cm ? `${m.brazo_derecho_cm}cm` : '—'}</span>
+                                                        <span>P: {m.pierna_derecha_cm ? `${m.pierna_derecha_cm}cm` : '—'}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', gap: 6 }}>
+                                                        {m.foto_frente_url && <a href={m.foto_frente_url} target="_blank" rel="noreferrer" title="Frente" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
+                                                        {m.foto_perfil_url && <a href={m.foto_perfil_url} target="_blank" rel="noreferrer" title="Perfil" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
+                                                        {m.foto_espalda_url && <a href={m.foto_espalda_url} target="_blank" rel="noreferrer" title="Espalda" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
                                                         {!m.foto_frente_url && !m.foto_perfil_url && !m.foto_espalda_url && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>}
                                                     </div>
                                                 </td>
-                                                <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.registrador_name}</td>
                                                 <td>
-                                                    <button className="btn btn-ghost btn-icon" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(m.id)}>
+                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                                        <FiUser size={10} />
+                                                        {m.registrador_name || 'Sistema'}
+                                                    </div>
+                                                </td>
+                                                <td style={{ textAlign: 'right', paddingRight: '1.5rem' }}>
+                                                    <button className="btn btn-ghost btn-icon" style={{ color: 'var(--danger)', width: 32, height: 32, background: 'rgba(239,68,68,0.1)' }} onClick={() => handleDelete(m.id)} title="Eliminar registro">
                                                         <FiTrash2 size={15} />
                                                     </button>
                                                 </td>
@@ -304,65 +431,85 @@ export default function Measurements() {
 
             {/* Modal nueva medición */}
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal" style={{ maxWidth: 680, width: '95%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2 className="modal-title">Nueva Medición — {selectedClient?.name}</h2>
-                            <button className="modal-close" onClick={() => setShowModal(false)}><FiX /></button>
+                <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(8px)', background: 'rgba(0,0,0,0.7)' }}>
+                    <div className="modal glass" style={{ maxWidth: 740, width: '95%', maxHeight: '90vh', overflowY: 'auto', padding: 0, border: '1px solid var(--border-subtle)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border-subtle)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: 'var(--text-primary)' }}>Nueva Medición</h2>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <FiUser size={12} /> Cliente: <span style={{ color: 'var(--primary-400)', fontWeight: 700 }}>{selectedClient?.name}</span>
+                                </div>
+                            </div>
+                            <button className="btn btn-ghost btn-icon" style={{ background: 'var(--dark-700)', width: 36, height: 36 }} onClick={() => setShowModal(false)}>
+                                <FiX size={18} />
+                            </button>
                         </div>
-                        <form onSubmit={handleSubmit} style={{ padding: 'var(--space-lg)' }}>
+
+                        <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }}>
                             {error && (
-                                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#ef4444', marginBottom: 'var(--space-md)', fontSize: '0.9rem' }}>
-                                    {error}
+                                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', padding: '12px 16px', color: '#f87171', marginBottom: '1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500 }}>
+                                    <FiX size={16} /> {error}
                                 </div>
                             )}
 
                             {/* Fecha */}
-                            <div className="form-group">
-                                <label className="form-label">Fecha de medición *</label>
-                                <input type="date" className="form-input" required value={form.fecha_medicion} onChange={e => setForm(f => ({ ...f, fecha_medicion: e.target.value }))} />
+                            <div className="form-group" style={{ marginBottom: '2rem' }}>
+                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiCalendar size={14} /> Fecha de medición *</label>
+                                <input type="date" className="form-input" required value={form.fecha_medicion} onChange={e => setForm(f => ({ ...f, fecha_medicion: e.target.value }))} style={{ maxWidth: 220, background: 'var(--dark-800)', border: '1px solid var(--border-subtle)' }} />
                             </div>
 
                             {/* Métricas principales */}
-                            <div style={{ marginBottom: 'var(--space-md)' }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                                    Métricas principales
+                            <div style={{ marginBottom: '2rem', background: 'var(--dark-800)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-400)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <FiActivity size={16} /> Métricas principales
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
-                                    <div className="form-group">
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1.25rem' }}>
+                                    <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">Peso (kg) *</label>
-                                        <input type="number" step="0.01" className="form-input" required placeholder="70.50" value={form.peso_kg} onChange={e => setForm(f => ({ ...f, peso_kg: e.target.value }))} />
+                                        <div style={{ position: 'relative' }}>
+                                            <input type="number" step="0.01" className="form-input" required placeholder="70.50" value={form.peso_kg} onChange={e => setForm(f => ({ ...f, peso_kg: e.target.value }))} style={{ paddingRight: 40 }} />
+                                            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>kg</span>
+                                        </div>
                                     </div>
-                                    <div className="form-group">
+                                    <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">Altura (cm)</label>
-                                        <input type="number" step="0.01" className="form-input" placeholder="170.00" value={form.altura_cm} onChange={e => setForm(f => ({ ...f, altura_cm: e.target.value }))} />
+                                        <div style={{ position: 'relative' }}>
+                                            <input type="number" step="0.01" className="form-input" placeholder="170.0" value={form.altura_cm} onChange={e => setForm(f => ({ ...f, altura_cm: e.target.value }))} style={{ paddingRight: 40 }} />
+                                            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>cm</span>
+                                        </div>
                                     </div>
-                                    <div className="form-group">
-                                        <label className="form-label">% Grasa corporal</label>
-                                        <input type="number" step="0.01" className="form-input" placeholder="18.50" value={form.porcentaje_grasa} onChange={e => setForm(f => ({ ...f, porcentaje_grasa: e.target.value }))} />
+                                    <div className="form-group" style={{ margin: 0 }}>
+                                        <label className="form-label">% Grasa</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input type="number" step="0.01" className="form-input" placeholder="18.5" value={form.porcentaje_grasa} onChange={e => setForm(f => ({ ...f, porcentaje_grasa: e.target.value }))} style={{ paddingRight: 35 }} />
+                                            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>%</span>
+                                        </div>
                                     </div>
-                                    <div className="form-group">
+                                    <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">% Músculo</label>
-                                        <input type="number" step="0.01" className="form-input" placeholder="42.00" value={form.porcentaje_musculo} onChange={e => setForm(f => ({ ...f, porcentaje_musculo: e.target.value }))} />
+                                        <div style={{ position: 'relative' }}>
+                                            <input type="number" step="0.01" className="form-input" placeholder="42.0" value={form.porcentaje_musculo} onChange={e => setForm(f => ({ ...f, porcentaje_musculo: e.target.value }))} style={{ paddingRight: 35 }} />
+                                            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>%</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Perímetros */}
-                            <div style={{ marginBottom: 'var(--space-md)' }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                                    Perímetros corporales (cm)
+                            <div style={{ marginBottom: '2rem', background: 'var(--dark-800)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-400)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <FiSliders size={16} /> Perímetros corporales (cm)
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1.25rem' }}>
                                     {[
                                         { field: 'cuello_cm', label: 'Cuello' },
                                         { field: 'pecho_cm', label: 'Pecho' },
                                         { field: 'cintura_cm', label: 'Cintura' },
                                         { field: 'cadera_cm', label: 'Cadera' },
-                                        { field: 'brazo_derecho_cm', label: 'Brazo derecho' },
-                                        { field: 'pierna_derecha_cm', label: 'Pierna derecha' },
+                                        { field: 'brazo_derecho_cm', label: 'Brazo (Der)' },
+                                        { field: 'pierna_derecha_cm', label: 'Pierna (Der)' },
                                     ].map(({ field, label }) => (
-                                        <div key={field} className="form-group">
+                                        <div key={field} className="form-group" style={{ margin: 0 }}>
                                             <label className="form-label">{label}</label>
                                             <input type="number" step="0.01" className="form-input" placeholder="—" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
                                         </div>
@@ -370,35 +517,43 @@ export default function Measurements() {
                                 </div>
                             </div>
 
-                            {/* Fotos */}
-                            <div style={{ marginBottom: 'var(--space-md)' }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <FiCamera size={14} /> Fotos de progreso (URLs de Cloudinary)
+                            {/* Fotos (Cloudinary Uploaders) */}
+                            <div style={{ marginBottom: '2rem', background: 'var(--dark-800)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-400)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <FiImage size={16} /> Fotos de progreso
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
-                                    {[
-                                        { field: 'foto_frente_url', label: 'Frente' },
-                                        { field: 'foto_perfil_url', label: 'Perfil' },
-                                        { field: 'foto_espalda_url', label: 'Espalda' },
-                                    ].map(({ field, label }) => (
-                                        <div key={field} className="form-group">
-                                            <label className="form-label">{label}</label>
-                                            <input type="url" className="form-input" placeholder="https://..." value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
-                                        </div>
-                                    ))}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>
+                                    <ImageUploadField
+                                        label="Foto Frontal"
+                                        url={form.foto_frente_url}
+                                        onUpload={(url) => setForm(f => ({ ...f, foto_frente_url: url }))}
+                                        onRemove={() => setForm(f => ({ ...f, foto_frente_url: '' }))}
+                                    />
+                                    <ImageUploadField
+                                        label="Foto Perfil"
+                                        url={form.foto_perfil_url}
+                                        onUpload={(url) => setForm(f => ({ ...f, foto_perfil_url: url }))}
+                                        onRemove={() => setForm(f => ({ ...f, foto_perfil_url: '' }))}
+                                    />
+                                    <ImageUploadField
+                                        label="Foto Espalda"
+                                        url={form.foto_espalda_url}
+                                        onUpload={(url) => setForm(f => ({ ...f, foto_espalda_url: url }))}
+                                        onRemove={() => setForm(f => ({ ...f, foto_espalda_url: '' }))}
+                                    />
                                 </div>
                             </div>
 
                             {/* Notas */}
-                            <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
-                                <label className="form-label">Notas</label>
-                                <textarea className="form-input" rows={3} placeholder='Ej: "Se tomó la medida en ayunas"' value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))} style={{ resize: 'vertical' }} />
+                            <div className="form-group" style={{ marginBottom: '2rem' }}>
+                                <label className="form-label">Notas Adicionales</label>
+                                <textarea className="form-input" rows={3} placeholder='Ej: "Se tomó la medida en ayunas, después del entrenamiento..."' value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))} style={{ resize: 'vertical', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)' }} />
                             </div>
 
-                            <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end' }}>
-                                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancelar</button>
-                                <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? <><div className="spinner" style={{ width: 16, height: 16 }} /> Guardando...</> : <><FiSave /> Guardar medición</>}
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem', marginTop: '1rem' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '0.75rem 1.5rem', fontWeight: 600 }}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary" disabled={saving} style={{ padding: '0.75rem 1.5rem', fontWeight: 700, minWidth: 160, display: 'flex', justifyContent: 'center', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}>
+                                    {saving ? <><div className="spinner spinner-sm" style={{ marginRight: 8 }} /> Guardando...</> : <><FiSave style={{ marginRight: 8 }} /> Guardar medición</>}
                                 </button>
                             </div>
                         </form>
@@ -408,3 +563,4 @@ export default function Measurements() {
         </div>
     )
 }
+
