@@ -8,10 +8,6 @@ import {
     FiEdit2, FiSave, FiX, FiLogOut, FiSun, FiMoon, FiPlus, FiCheck, FiUsers, FiTarget,
     FiZap, FiSearch, FiChevronLeft
 } from 'react-icons/fi'
-import {
-    getClientSubscriptions, subscribeToTemplate, unsubscribeFromTemplate,
-    getRoutineTemplates, getTemplateExercises
-} from '../../lib/services'
 
 var CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 var UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
@@ -67,7 +63,6 @@ export default function ClientDashboard() {
     var _membership = useState(null)
     var _attendances = useState([])
     var _payments = useState([])
-    var _routine = useState(null)
     var _classes = useState([])
     var _location = useState(null)
     var _editing = useState(false)
@@ -84,16 +79,11 @@ export default function ClientDashboard() {
     var _allClasses = useState([])
     var _enrolling = useState(false)
     var _enrollMsg = useState(null)
-    var _subscriptions = useState([])
-    var _allTemplates = useState([])
-    var _showBrowseRoutines = useState(false)
-    var _browseExercises = useState({})
 
     var loading = _loading[0], setLoading = _loading[1]
     var membership = _membership[0], setMembership = _membership[1]
     var attendances = _attendances[0], setAttendances = _attendances[1]
     var payments = _payments[0], setPayments = _payments[1]
-    var routine = _routine[0], setRoutine = _routine[1]
     var classes = _classes[0], setClasses = _classes[1]
     var location = _location[0], setLocation = _location[1]
     var editing = _editing[0], setEditing = _editing[1]
@@ -110,10 +100,6 @@ export default function ClientDashboard() {
     var allClasses = _allClasses[0], setAllClasses = _allClasses[1]
     var enrolling = _enrolling[0], setEnrolling = _enrolling[1]
     var enrollMsg = _enrollMsg[0], setEnrollMsg = _enrollMsg[1]
-    var subscriptions = _subscriptions[0], setSubscriptions = _subscriptions[1]
-    var allTemplates = _allTemplates[0], setAllTemplates = _allTemplates[1]
-    var showBrowseRoutines = _showBrowseRoutines[0], setShowBrowseRoutines = _showBrowseRoutines[1]
-    var browseExercises = _browseExercises[0], setBrowseExercises = _browseExercises[1]
     var fileRef = useRef(null)
 
     useEffect(function () {
@@ -123,7 +109,6 @@ export default function ClientDashboard() {
 
         var channel = supabase.channel('client_dashboard_changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'class_enrollments', filter: 'client_id=eq.' + user.id }, function () { loadClientData() })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'routines', filter: 'client_id=eq.' + user.id }, function () { loadClientData() })
             .subscribe()
 
         return function () { supabase.removeChannel(channel) }
@@ -168,16 +153,7 @@ export default function ClientDashboard() {
                 .limit(5)
             setPayments(payRes.data || [])
 
-            // rutina
-            var routRes = await supabase
-                .from('routines')
-                .select('*, routine_exercises(*, exercises(name, muscle_group))')
-                .eq('client_id', clientId)
-                .eq('status', 'active')
-                .single()
-            if (routRes.data) setRoutine(routRes.data)
-
-            // clases inscritas
+            // clases inscritas del cliente
             var clsRes = await supabase
                 .from('class_enrollments')
                 .select('*, class:classes(name, instructor, schedule)')
@@ -185,21 +161,13 @@ export default function ClientDashboard() {
                 .eq('status', 'active')
             setClasses(clsRes.data || [])
 
-            // todas las clases activas
+            // todas las clases activas (para explorar/matricularse)
             var allClsRes = await supabase
                 .from('classes')
                 .select('*, location:locations(name), class_enrollments(id, client_id)')
                 .eq('status', 'active')
                 .order('name')
             setAllClasses(allClsRes.data || [])
-
-            // suscripciones a rutinas predefinidas
-            var subs = await getClientSubscriptions(clientId)
-            setSubscriptions(subs)
-
-            // todas las plantillas disponibles
-            var templates = await getRoutineTemplates()
-            setAllTemplates(templates)
 
         } catch (err) { console.error('loadClientData error:', err) }
         finally { setLoading(false) }
@@ -278,6 +246,22 @@ export default function ClientDashboard() {
                     </span>
                 </Link>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                    <Link to="/portal/routines"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit', cursor: 'pointer', padding: '0.375rem 0.625rem', borderRadius: 'var(--radius-md)', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', transition: 'background 0.2s, border-color 0.2s' }}
+                        title="Mis Rutinas"
+                        onMouseEnter={function (e) { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'var(--dark-700)' }}
+                        onMouseLeave={function (e) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Mis Rutinas</span>
+                    </Link>
+
+                    <Link to="/portal/diets"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit', cursor: 'pointer', padding: '0.375rem 0.625rem', borderRadius: 'var(--radius-md)', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', transition: 'background 0.2s, border-color 0.2s' }}
+                        title="Mi Dieta"
+                        onMouseEnter={function (e) { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'var(--dark-700)' }}
+                        onMouseLeave={function (e) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Mi Dieta</span>
+                    </Link>
+
                     <a href="#mis-datos" onClick={function (e) { e.preventDefault(); document.getElementById('mis-datos').scrollIntoView({ behavior: 'smooth' }); startEditing() }}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit', cursor: 'pointer', padding: '0.375rem 0.625rem', borderRadius: 'var(--radius-md)', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', transition: 'background 0.2s, border-color 0.2s' }}
                         title="Editar mis datos"
@@ -447,9 +431,8 @@ export default function ClientDashboard() {
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opts.dayNum}</span>
                             </div>
                         )
-                        var isRoutine = routine && routine.days && routine.days.includes(opts.weekDayName)
                         var dayClasses2 = sortedDayClasses(opts.weekDayName)
-                        var hasEvents = isRoutine || dayClasses2.length > 0
+                        var hasEvents = dayClasses2.length > 0
                         return (
                             <div style={{
                                 minHeight: calView === 'weekly' ? 110 : 72, padding: '0.375rem', borderRadius: 'var(--radius-sm)',
@@ -482,11 +465,6 @@ export default function ClientDashboard() {
                                     )}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    {isRoutine && (
-                                        <div style={{ fontSize: '0.625rem', background: 'rgba(249,115,22,0.2)', color: '#f97316', padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                                            <FiZap size={8} /> Rutina
-                                        </div>
-                                    )}
                                     {dayClasses2.map(function (c) {
                                         var timeMatch = c.class?.schedule ? c.class.schedule.match(/\d{1,2}:\d{2}/) : null
                                         var timeStr = timeMatch ? timeMatch[0] : ''
@@ -594,9 +572,6 @@ export default function ClientDashboard() {
 
                             <div style={{ display: 'flex', gap: 'var(--space-lg)', marginTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)', flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                    <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(249,115,22,0.3)' }} /> Rutina programada
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                     <div style={{ width: 10, height: 10, borderRadius: 2, background: 'rgba(139,92,246,0.3)' }} /> Clase grupal
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -625,10 +600,12 @@ export default function ClientDashboard() {
                         </div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-card-icon" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}><FiActivity /></div>
+                        <div className="stat-card-icon" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}><FiDollarSign /></div>
                         <div className="stat-card-content">
-                            <div className="stat-card-label">Rutinas</div>
-                            <div className="stat-card-value" style={{ fontSize: '1.5rem' }}>{subscriptions.length}</div>
+                            <div className="stat-card-label">Ultimo Pago</div>
+                            <div className="stat-card-value" style={{ fontSize: '1.5rem' }}>
+                                {'S/ ' + (lastPayment ? Number(lastPayment.amount).toFixed(0) : '0')}
+                            </div>
                         </div>
                     </div>
                     <div className="stat-card">
@@ -664,57 +641,6 @@ export default function ClientDashboard() {
                                                 {date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
                                                 {a.location ? ' • ' + a.location.name : ''}
                                             </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Mis Rutinas - Plantillas suscritas */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-                            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                                <FiActivity color="var(--primary-400)" /> Mis Rutinas
-                            </h3>
-                            <button className="btn btn-sm btn-primary" onClick={function () { setShowBrowseRoutines(true) }}>
-                                <FiPlus size={13} /> Explorar
-                            </button>
-                        </div>
-                        {subscriptions.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}><FiTarget size={40} style={{opacity:0.4, color:'var(--primary-400)'}} /></div>
-                                <p style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>No estás suscrito a ninguna rutina</p>
-                                <button className="btn btn-sm btn-secondary" onClick={function () { setShowBrowseRoutines(true) }}>Ver rutinas disponibles</button>
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                                {subscriptions.map(function (sub) {
-                                    var t = sub.template
-                                    if (!t) return null
-                                    return (
-                                        <div key={sub.id} style={{
-                                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-md)',
-                                            background: 'var(--dark-600)', borderLeft: '3px solid ' + (t.color || '#8b5cf6')
-                                        }}>
-                                            <span style={{ fontSize: '1.5rem' }}>{t.emoji}</span>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{t.name}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                    {t.level} • {t.duration} • {(t.days || []).join(', ')}
-                                                </div>
-                                            </div>
-                                            <button
-                                                className="btn btn-ghost btn-icon"
-                                                style={{ width: 28, height: 28, color: 'var(--danger)', fontSize: '0.8rem' }}
-                                                title="Cancelar suscripción"
-                                                onClick={async function () {
-                                                    await unsubscribeFromTemplate(user.id, t.id)
-                                                    loadClientData()
-                                                }}>
-                                                <FiX size={13} />
-                                            </button>
                                         </div>
                                     )
                                 })}
@@ -916,17 +842,6 @@ export default function ClientDashboard() {
                     )
                 })()}
 
-                {/* Browse Routines Modal */}
-                {showBrowseRoutines && (
-                    <BrowseRoutinesModal
-                        templates={allTemplates}
-                        subscriptions={subscriptions}
-                        clientId={user.id}
-                        onClose={function () { setShowBrowseRoutines(false) }}
-                        onChanged={function () { loadClientData() }}
-                    />
-                )}
-
                 {/* Personal Info */}
                 <div className="card" id="mis-datos">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
@@ -1001,195 +916,6 @@ export default function ClientDashboard() {
                             })}
                         </div>
                     )}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-// ─── Browse Routines Modal ────────────────────────────────────
-var levelColor = { 'Principiante': '#10b981', 'Intermedio': '#f59e0b', 'Avanzado': '#ef4444' }
-
-function BrowseRoutinesModal({ templates, subscriptions, clientId, onClose, onChanged }) {
-    var [filterLevel, setFilterLevel] = useState('all')
-    var [search, setSearch] = useState('')
-    var [selectedTemplate, setSelectedTemplate] = useState(null)
-    var [templateExercises, setTemplateExercises] = useState([])
-    var [loadingExs, setLoadingExs] = useState(false)
-    var [acting, setActing] = useState(false)
-
-    var subscribedIds = subscriptions.map(function (s) { return s.template_id })
-
-    var filtered = templates.filter(function (t) {
-        var ms = !search || t.name?.toLowerCase().includes(search.toLowerCase()) || t.objective?.toLowerCase().includes(search.toLowerCase())
-        var fl = filterLevel === 'all' || t.level === filterLevel
-        return ms && fl
-    })
-
-    async function handleSelect(tmpl) {
-        setSelectedTemplate(tmpl)
-        setLoadingExs(true)
-        try {
-            var exs = await getTemplateExercises(tmpl.id)
-            setTemplateExercises(exs)
-        } catch (err) { console.error(err) }
-        finally { setLoadingExs(false) }
-    }
-
-    async function handleToggle(tmpl) {
-        if (acting) return
-        setActing(true)
-        try {
-            if (subscribedIds.includes(tmpl.id)) {
-                await unsubscribeFromTemplate(clientId, tmpl.id)
-            } else {
-                await subscribeToTemplate(clientId, tmpl.id)
-            }
-            onChanged()
-        } catch (err) { console.error(err) }
-        finally { setActing(false) }
-    }
-
-    var byDay = {}
-    templateExercises.forEach(function (ex) {
-        var day = ex.day || 'General'
-        if (!byDay[day]) byDay[day] = []
-        byDay[day].push(ex)
-    })
-
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal modal-lg" onClick={function (e) { e.stopPropagation() }}
-                style={{ maxWidth: 860, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div className="modal-header">
-                    <h2 className="modal-title"><FiActivity size={18} style={{marginRight:'0.375rem'}} /> Explorar Rutinas Disponibles</h2>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
-                </div>
-
-                <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                    {/* Left: template list */}
-                    <div style={{ width: 340, borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border-subtle)' }}>
-                            <div className="search-bar" style={{ marginBottom: '0.5rem' }}>
-                                <span className="search-bar-icon"><FiSearch /></span>
-                                <input placeholder="Buscar rutina..." value={search} onChange={function (e) { setSearch(e.target.value) }} />
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                                {['all', 'Principiante', 'Intermedio', 'Avanzado'].map(function (l) {
-                                    return (
-                                        <button key={l}
-                                            className={'btn btn-sm ' + (filterLevel === l ? 'btn-primary' : 'btn-secondary')}
-                                            onClick={function () { setFilterLevel(l) }}
-                                            style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
-                                            {l === 'all' ? 'Todos' : l}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                        <div style={{ overflowY: 'auto', flex: 1 }}>
-                            {filtered.map(function (tmpl) {
-                                var isSubscribed = subscribedIds.includes(tmpl.id)
-                                var isSelected = selectedTemplate?.id === tmpl.id
-                                var lc = levelColor[tmpl.level] || '#94a3b8'
-                                return (
-                                    <div key={tmpl.id}
-                                        onClick={function () { handleSelect(tmpl) }}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.875rem 1rem', cursor: 'pointer',
-                                            background: isSelected ? (tmpl.color + '12') : 'transparent',
-                                            borderLeft: isSelected ? ('3px solid ' + tmpl.color) : '3px solid transparent',
-                                            borderBottom: '1px solid var(--border-subtle)',
-                                            transition: 'all 0.15s'
-                                        }}>
-                                        <span style={{ fontSize: '1.5rem' }}>{tmpl.emoji}</span>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tmpl.name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: lc, fontWeight: 600 }}>{tmpl.level}</div>
-                                        </div>
-                                        {isSubscribed && (
-                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-full)', background: 'rgba(16,185,129,0.2)', color: '#10b981', whiteSpace: 'nowrap' }}>✓ Activa</span>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Right: detail */}
-                    <div style={{ flex: 1, overflow: 'auto', padding: 'var(--space-lg)' }}>
-                        {!selectedTemplate ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}><FiChevronLeft size={48} style={{opacity:0.4}} /></div>
-                                <p>Selecciona una rutina para ver sus detalles</p>
-                            </div>
-                        ) : (
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: 'var(--space-lg)' }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: selectedTemplate.color + '20', fontSize: '2rem', flexShrink: 0 }}>{selectedTemplate.emoji}</div>
-                                    <div style={{ flex: 1 }}>
-                                        <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem' }}>{selectedTemplate.name}</h3>
-                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                            <span className="badge" style={{ background: (levelColor[selectedTemplate.level] || '#94a3b8') + '20', color: levelColor[selectedTemplate.level] || '#94a3b8', fontWeight: 700 }}>{selectedTemplate.level}</span>
-                                            <span className="badge badge-neutral"><FiClock size={11} style={{ marginRight: 3 }} />{selectedTemplate.duration}</span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        className={'btn ' + (subscribedIds.includes(selectedTemplate.id) ? 'btn-danger' : 'btn-primary')}
-                                        disabled={acting}
-                                        onClick={function () { handleToggle(selectedTemplate) }}>
-                                        {acting ? 'Procesando...' : subscribedIds.includes(selectedTemplate.id) ? '✕ Cancelar' : '+ Suscribirme'}
-                                    </button>
-                                </div>
-
-                                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: 'var(--space-lg)', fontSize: '0.9375rem' }}>{selectedTemplate.description}</p>
-
-                                <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        <FiTarget size={14} color={selectedTemplate.color} /><strong>Objetivo:</strong> {selectedTemplate.objective}
-                                    </div>
-                                </div>
-
-                                <div style={{ marginBottom: 'var(--space-md)' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Días de entrenamiento</div>
-                                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                                        {(selectedTemplate.days || []).map(function (d) {
-                                            return <span key={d} className="badge" style={{ background: selectedTemplate.color + '20', color: selectedTemplate.color, fontWeight: 700 }}>{d}</span>
-                                        })}
-                                    </div>
-                                </div>
-
-                                {loadingExs ? <div className="spinner spinner-lg" style={{ margin: '2rem auto' }}></div> : (
-                                    <div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 'var(--space-md)' }}>Ejercicios por día</div>
-                                        {Object.keys(byDay).map(function (day) {
-                                            return (
-                                                <div key={day} style={{ marginBottom: 'var(--space-md)' }}>
-                                                    <span className="badge" style={{ background: selectedTemplate.color + '20', color: selectedTemplate.color, fontWeight: 700, marginBottom: '0.5rem', display: 'inline-block' }}>{day}</span>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                                                        {byDay[day].map(function (ex, i) {
-                                                            var exData = ex.exercises || {}
-                                                            return (
-                                                                <div key={i} style={{
-                                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                                    padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
-                                                                    background: 'var(--dark-700)', fontSize: '0.875rem'
-                                                                }}>
-                                                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{exData.name}</span>
-                                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{ex.sets} × {ex.reps}</span>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
                 </div>
             </div>
         </div>

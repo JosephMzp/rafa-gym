@@ -522,7 +522,7 @@ export async function deleteRoutineTemplate(id) {
 export async function getTemplateExercises(templateId) {
     const { data, error } = await supabase
         .from('routine_template_exercises')
-        .select('*, exercises(id, name, muscle_group, equipment)')
+        .select('*, exercises(*)')
         .eq('template_id', templateId)
         .order('order_index')
     if (error) throw error
@@ -608,8 +608,8 @@ export async function unsubscribeFromTemplate(clientId, templateId) {
 // DETALLE COMPLETO DE CLIENTE
 // ============================================
 export async function getClientFullDetail(clientId) {
-    const [routinesRes, classesRes, attendancesRes, paymentsRes] = await Promise.all([
-        // Rutinas personales asignadas
+    const [routinesRes, subscriptionsRes, classesRes, attendancesRes, paymentsRes] = await Promise.all([
+        // 1. Rutinas personales asignadas por el entrenador
         supabase
             .from('routines')
             .select('id, name, objective, level, duration, days, trainer_name, created_at, notes')
@@ -618,7 +618,19 @@ export async function getClientFullDetail(clientId) {
             .order('created_at', { ascending: false })
             .limit(5),
 
-        // Clases matriculadas
+        // 2. Suscripciones a programas/plantillas (desde client/Routines.jsx)
+        supabase
+            .from('client_routine_subscriptions')
+            .select(`
+                id, subscribed_at, status,
+                template:routine_templates(id, name, objective, level, duration, days)
+            `)
+            .eq('client_id', clientId)
+            .eq('status', 'active')
+            .order('subscribed_at', { ascending: false })
+            .limit(5),
+
+        // 3. Clases matriculadas
         supabase
             .from('class_enrollments')
             .select(`
@@ -629,7 +641,7 @@ export async function getClientFullDetail(clientId) {
             .eq('status', 'active')
             .order('enrolled_at', { ascending: false }),
 
-        // Asistencias recientes
+        // 4. Asistencias recientes
         supabase
             .from('attendances')
             .select('id, check_in, location:locations(name)')
@@ -637,7 +649,7 @@ export async function getClientFullDetail(clientId) {
             .order('check_in', { ascending: false })
             .limit(10),
 
-        // Pagos recientes
+        // 5. Pagos recientes
         supabase
             .from('payments')
             .select('id, amount, date, status, concept')
@@ -646,8 +658,30 @@ export async function getClientFullDetail(clientId) {
             .limit(5),
     ])
 
+    // Procesar rutinas personalizadas
+    const customRoutines = routinesRes.data || [];
+
+    // Procesar rutinas de plantillas (adaptando el formato para que coincida con la vista)
+    const templateRoutines = (subscriptionsRes.data || []).map(sub => ({
+        id: sub.id,
+        name: sub.template?.name || 'Programa de Entrenamiento',
+        objective: sub.template?.objective || 'General',
+        level: sub.template?.level || '',
+        duration: sub.template?.duration || '',
+        days: sub.template?.days || [],
+        days_per_week: sub.template?.days?.length || 0,
+        trainer_name: 'Programa Automatizado',
+        created_at: sub.subscribed_at,
+        notes: 'Suscripción elegida por el cliente desde el portal.'
+    }));
+
+    // Combinar ambas listas de rutinas y ordenar por fecha más reciente
+    const allRoutines = [...customRoutines, ...templateRoutines].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
     return {
-        routines: routinesRes.data || [],
+        routines: allRoutines,
         classes: (classesRes.data || []).map(e => ({
             ...e,
             class_name: e.class?.name || '',
@@ -671,27 +705,27 @@ export async function getClientFullDetail(clientId) {
 export async function getMeasurements() {
     const { data, error } = await supabase
         .from('body_measurements')
-        .select('*, client:clients(id, name, photo_url), registrado_por_staff:staff!registrado_por(id, name)')
-        .order('fecha_medicion', { ascending: false })
+        .select('*, client:clients(id, name, photo_url), recorded_by_staff:staff!recorded_by(id, name)')
+        .order('measurement_date', { ascending: false })
     if (error) { console.error('getMeasurements error:', error); return [] }
     return (data || []).map(m => ({
         ...m,
         client_name: m.client?.name || '',
         client_photo: m.client?.photo_url || null,
-        registrador_name: m.registrado_por_staff?.name || 'Cliente'
+        registrador_name: m.recorded_by_staff?.name || 'Cliente'
     }))
 }
 
 export async function getClientMeasurements(clientId) {
     const { data, error } = await supabase
         .from('body_measurements')
-        .select('*, registrado_por_staff:staff!registrado_por(id, name)')
+        .select('*, recorded_by_staff:staff!recorded_by(id, name)')
         .eq('client_id', clientId)
-        .order('fecha_medicion', { ascending: true })
+        .order('measurement_date', { ascending: true })
     if (error) { console.error('getClientMeasurements error:', error); return [] }
     return (data || []).map(m => ({
         ...m,
-        registrador_name: m.registrado_por_staff?.name || 'Cliente'
+        registrador_name: m.recorded_by_staff?.name || 'Cliente'
     }))
 }
 

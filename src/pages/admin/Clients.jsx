@@ -726,7 +726,7 @@ function ClientFormModal({ client, membershipTypes, locations, onSave, onClose }
         name: client?.name || '', document: client?.document || '', email: client?.email || '',
         phone: client?.phone || '', birth_date: client?.birth_date || '', address: client?.address || '',
         emergency_contact: client?.emergency_contact || '', location_id: client?.location_id || locations[0]?.id || '',
-        photo_url: client?.photo_url || ''
+        photo_url: client?.photo_url || '', gender: client?.gender || ''
     })
     const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
@@ -754,6 +754,13 @@ function ClientFormModal({ client, membershipTypes, locations, onSave, onClose }
                         <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" value={form.email} onChange={e => handleChange('email', e.target.value)} placeholder="email@ejemplo.com" /></div>
                         <div className="form-group"><label className="form-label">Teléfono *</label><input className="form-input" value={form.phone} onChange={e => handleChange('phone', e.target.value)} placeholder="987654321" /></div>
                         <div className="form-group"><label className="form-label">Fecha de Nacimiento</label><input className="form-input" type="date" value={form.birth_date} onChange={e => handleChange('birth_date', e.target.value)} /></div>
+                        <div className="form-group"><label className="form-label">Género <span style={{ color: 'var(--primary-400)', fontSize: '0.8rem' }}>(requerido para dietas)</span></label>
+                            <select className="form-input" value={form.gender} onChange={e => handleChange('gender', e.target.value)}>
+                                <option value="">Seleccionar...</option>
+                                <option value="M">Masculino</option>
+                                <option value="F">Femenino</option>
+                            </select>
+                        </div>
                         <div className="form-group"><label className="form-label">Dirección</label><input className="form-input" value={form.address} onChange={e => handleChange('address', e.target.value)} placeholder="Dirección" /></div>
                         <div className="form-group"><label className="form-label">Contacto de Emergencia</label><input className="form-input" value={form.emergency_contact} onChange={e => handleChange('emergency_contact', e.target.value)} placeholder="Nombre - Teléfono" /></div>
                         <div className="form-group"><label className="form-label">Sede *</label>

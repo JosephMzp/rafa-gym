@@ -366,7 +366,6 @@ function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }
                                 <option value="Mensualidad">Mensualidad</option>
                                 <option value="Renovación">Renovación</option>
                                 <option value="Clase Grupal">Clase Grupal</option>
-                                <option value="Producto">Producto</option>
                                 <option value="Otro">Otro</option>
                             </select>
                         </div>

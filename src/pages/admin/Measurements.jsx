@@ -58,8 +58,8 @@ const ImageUploadField = ({ label, url, onUpload, onRemove }) => {
                 <div
                     onClick={() => !uploading && fileRef.current?.click()}
                     style={{ width: '100%', aspectRatio: '3/4', borderRadius: 'var(--radius-lg)', border: '2px dashed var(--border-subtle)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'wait' : 'pointer', background: 'var(--dark-800)', color: 'var(--text-secondary)', transition: 'all 0.2s' }}
-                    onMouseEnter={e => { if(!uploading) e.currentTarget.style.borderColor = 'var(--primary-400)'; e.currentTarget.style.background = 'var(--dark-700)' }}
-                    onMouseLeave={e => { if(!uploading) e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}
+                    onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = 'var(--primary-400)'; e.currentTarget.style.background = 'var(--dark-700)' }}
+                    onMouseLeave={e => { if (!uploading) e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}
                 >
                     {uploading ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
@@ -83,12 +83,12 @@ const ImageUploadField = ({ label, url, onUpload, onRemove }) => {
 }
 
 const EMPTY_FORM = {
-    fecha_medicion: new Date().toISOString().split('T')[0],
-    peso_kg: '', altura_cm: '', porcentaje_grasa: '', porcentaje_musculo: '',
-    cuello_cm: '', pecho_cm: '', cintura_cm: '', cadera_cm: '',
-    brazo_derecho_cm: '', pierna_derecha_cm: '',
-    foto_frente_url: '', foto_perfil_url: '', foto_espalda_url: '',
-    notas: ''
+    measurement_date: new Date().toISOString().split('T')[0],
+    weight_kg: '', height_cm: '', body_fat_pct: '', muscle_pct: '',
+    neck_cm: '', chest_cm: '', waist_cm: '', hip_cm: '',
+    right_arm_cm: '', right_leg_cm: '',
+    photo_front_url: '', photo_side_url: '', photo_back_url: '',
+    notes: ''
 }
 
 export default function Measurements() {
@@ -103,7 +103,7 @@ export default function Measurements() {
     const [search, setSearch] = useState('')
     const [showDropdown, setShowDropdown] = useState(false)
     const [loadingM, setLoadingM] = useState(false)
-    const [activeChart, setActiveChart] = useState(['peso_kg'])
+    const [activeChart, setActiveChart] = useState(['weight_kg'])
 
     useEffect(() => {
         getClients().then(setClients)
@@ -136,7 +136,7 @@ export default function Measurements() {
         setSaving(true)
         try {
             const payload = { ...form, client_id: selectedClient.id }
-            if (user?.isStaff) payload.registrado_por = user.id
+            if (user?.isStaff) payload.recorded_by = user.id
             Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null })
             await createMeasurement(payload)
             const updated = await getClientMeasurements(selectedClient.id)
@@ -157,18 +157,18 @@ export default function Measurements() {
     }
 
     const chartLines = [
-        { key: 'peso_kg', label: 'Peso (kg)', color: '#8b5cf6' },
-        { key: 'porcentaje_grasa', label: '% Grasa', color: '#ef4444' },
-        { key: 'porcentaje_musculo', label: '% Músculo', color: '#10b981' },
-        { key: 'cintura_cm', label: 'Cintura (cm)', color: '#f59e0b' },
+        { key: 'weight_kg', label: 'Peso (kg)', color: '#8b5cf6' },
+        { key: 'body_fat_pct', label: '% Grasa', color: '#ef4444' },
+        { key: 'muscle_pct', label: '% Músculo', color: '#10b981' },
+        { key: 'waist_cm', label: 'Cintura (cm)', color: '#f59e0b' },
     ]
 
     const chartData = measurements.map(m => ({
-        fecha: m.fecha_medicion,
-        peso_kg: m.peso_kg ? Number(m.peso_kg) : null,
-        porcentaje_grasa: m.porcentaje_grasa ? Number(m.porcentaje_grasa) : null,
-        porcentaje_musculo: m.porcentaje_musculo ? Number(m.porcentaje_musculo) : null,
-        cintura_cm: m.cintura_cm ? Number(m.cintura_cm) : null,
+        fecha: m.measurement_date,
+        weight_kg: m.weight_kg ? Number(m.weight_kg) : null,
+        body_fat_pct: m.body_fat_pct ? Number(m.body_fat_pct) : null,
+        muscle_pct: m.muscle_pct ? Number(m.muscle_pct) : null,
+        waist_cm: m.waist_cm ? Number(m.waist_cm) : null,
     }))
 
     return (
@@ -270,10 +270,10 @@ export default function Measurements() {
                     {latest && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
                             {[
-                                { label: 'Peso actual', value: latest.peso_kg ? `${latest.peso_kg} kg` : '—', delta: diff('peso_kg'), invert: true, icon: <FiActivity />, color: '#8b5cf6' },
-                                { label: '% Grasa', value: latest.porcentaje_grasa ? `${latest.porcentaje_grasa}%` : '—', delta: diff('porcentaje_grasa'), invert: true, icon: <FiTrendingDown />, color: '#ef4444' },
-                                { label: '% Músculo', value: latest.porcentaje_musculo ? `${latest.porcentaje_musculo}%` : '—', delta: diff('porcentaje_musculo'), invert: false, icon: <FiTrendingUp />, color: '#10b981' },
-                                { label: 'Cintura', value: latest.cintura_cm ? `${latest.cintura_cm} cm` : '—', delta: diff('cintura_cm'), invert: true, icon: <FiSliders />, color: '#f59e0b' },
+                                { label: 'Peso actual', value: latest.weight_kg ? `${latest.weight_kg} kg` : '—', delta: diff('weight_kg'), invert: true, icon: <FiActivity />, color: '#8b5cf6' },
+                                { label: '% Grasa', value: latest.body_fat_pct ? `${latest.body_fat_pct}%` : '—', delta: diff('body_fat_pct'), invert: true, icon: <FiTrendingDown />, color: '#ef4444' },
+                                { label: '% Músculo', value: latest.muscle_pct ? `${latest.muscle_pct}%` : '—', delta: diff('muscle_pct'), invert: false, icon: <FiTrendingUp />, color: '#10b981' },
+                                { label: 'Cintura', value: latest.waist_cm ? `${latest.waist_cm} cm` : '—', delta: diff('waist_cm'), invert: true, icon: <FiSliders />, color: '#f59e0b' },
                                 { label: 'Total mediciones', value: measurements.length, delta: null, icon: <FiCalendar />, color: '#3b82f6' },
                             ].map((s, i) => {
                                 const dv = s.delta !== null ? parseFloat(s.delta) : null
@@ -384,28 +384,28 @@ export default function Measurements() {
                                             <tr key={m.id} style={{ borderBottom: i === measurements.length - 1 ? 'none' : '1px solid var(--border-subtle)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--dark-800)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                                 <td style={{ padding: '1rem 1.5rem' }}>
                                                     <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                                                        {new Date(m.fecha_medicion).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        {new Date(m.measurement_date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    {m.peso_kg ? <span style={{ fontWeight: 600, color: 'var(--primary-400)' }}>{m.peso_kg} kg</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                                                    {m.weight_kg ? <span style={{ fontWeight: 600, color: 'var(--primary-400)' }}>{m.weight_kg} kg</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                                                 </td>
-                                                <td>{m.porcentaje_grasa != null ? <span style={{ fontWeight: 600, color: '#ef4444' }}>{m.porcentaje_grasa}%</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
-                                                <td>{m.porcentaje_musculo != null ? <span style={{ fontWeight: 600, color: '#10b981' }}>{m.porcentaje_musculo}%</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
-                                                <td>{m.cintura_cm ? `${m.cintura_cm} cm` : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
-                                                <td>{m.cadera_cm ? `${m.cadera_cm} cm` : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.body_fat_pct != null ? <span style={{ fontWeight: 600, color: '#ef4444' }}>{m.body_fat_pct}%</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.muscle_pct != null ? <span style={{ fontWeight: 600, color: '#10b981' }}>{m.muscle_pct}%</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.waist_cm ? `${m.waist_cm} cm` : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td>{m.hip_cm ? `${m.hip_cm} cm` : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                                                 <td>
                                                     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                                        <span>B: {m.brazo_derecho_cm ? `${m.brazo_derecho_cm}cm` : '—'}</span>
-                                                        <span>P: {m.pierna_derecha_cm ? `${m.pierna_derecha_cm}cm` : '—'}</span>
+                                                        <span>B: {m.right_arm_cm ? `${m.right_arm_cm}cm` : '—'}</span>
+                                                        <span>P: {m.right_leg_cm ? `${m.right_leg_cm}cm` : '—'}</span>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: 6 }}>
-                                                        {m.foto_frente_url && <a href={m.foto_frente_url} target="_blank" rel="noreferrer" title="Frente" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
-                                                        {m.foto_perfil_url && <a href={m.foto_perfil_url} target="_blank" rel="noreferrer" title="Perfil" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
-                                                        {m.foto_espalda_url && <a href={m.foto_espalda_url} target="_blank" rel="noreferrer" title="Espalda" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
-                                                        {!m.foto_frente_url && !m.foto_perfil_url && !m.foto_espalda_url && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>}
+                                                        {m.photo_front_url && <a href={m.photo_front_url} target="_blank" rel="noreferrer" title="Frente" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
+                                                        {m.photo_side_url && <a href={m.photo_side_url} target="_blank" rel="noreferrer" title="Perfil" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
+                                                        {m.photo_back_url && <a href={m.photo_back_url} target="_blank" rel="noreferrer" title="Espalda" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', transition: 'background 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-500)'; e.currentTarget.style.color = 'white' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--dark-700)'; e.currentTarget.style.color = 'var(--primary-400)' }}><FiImage size={14} /></a>}
+                                                        {!m.photo_front_url && !m.photo_side_url && !m.photo_back_url && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>}
                                                     </div>
                                                 </td>
                                                 <td>
@@ -433,7 +433,7 @@ export default function Measurements() {
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(8px)', background: 'rgba(0,0,0,0.7)' }}>
                     <div className="modal glass" style={{ maxWidth: 740, width: '95%', maxHeight: '90vh', overflowY: 'auto', padding: 0, border: '1px solid var(--border-subtle)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border-subtle)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--surface-glass)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border-subtle)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem', margin: 0, color: 'var(--text-primary)' }}>Nueva Medición</h2>
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -455,7 +455,7 @@ export default function Measurements() {
                             {/* Fecha */}
                             <div className="form-group" style={{ marginBottom: '2rem' }}>
                                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiCalendar size={14} /> Fecha de medición *</label>
-                                <input type="date" className="form-input" required value={form.fecha_medicion} onChange={e => setForm(f => ({ ...f, fecha_medicion: e.target.value }))} style={{ maxWidth: 220, background: 'var(--dark-800)', border: '1px solid var(--border-subtle)' }} />
+                                <input type="date" className="form-input" required value={form.measurement_date} onChange={e => setForm(f => ({ ...f, measurement_date: e.target.value }))} style={{ maxWidth: 220 }} />
                             </div>
 
                             {/* Métricas principales */}
@@ -467,28 +467,28 @@ export default function Measurements() {
                                     <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">Peso (kg) *</label>
                                         <div style={{ position: 'relative' }}>
-                                            <input type="number" step="0.01" className="form-input" required placeholder="70.50" value={form.peso_kg} onChange={e => setForm(f => ({ ...f, peso_kg: e.target.value }))} style={{ paddingRight: 40 }} />
+                                            <input type="number" step="0.01" className="form-input" required placeholder="70.50" value={form.weight_kg} onChange={e => setForm(f => ({ ...f, weight_kg: e.target.value }))} style={{ paddingRight: 40 }} />
                                             <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>kg</span>
                                         </div>
                                     </div>
                                     <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">Altura (cm)</label>
                                         <div style={{ position: 'relative' }}>
-                                            <input type="number" step="0.01" className="form-input" placeholder="170.0" value={form.altura_cm} onChange={e => setForm(f => ({ ...f, altura_cm: e.target.value }))} style={{ paddingRight: 40 }} />
+                                            <input type="number" step="0.01" className="form-input" placeholder="170.0" value={form.height_cm} onChange={e => setForm(f => ({ ...f, height_cm: e.target.value }))} style={{ paddingRight: 40 }} />
                                             <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>cm</span>
                                         </div>
                                     </div>
                                     <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">% Grasa</label>
                                         <div style={{ position: 'relative' }}>
-                                            <input type="number" step="0.01" className="form-input" placeholder="18.5" value={form.porcentaje_grasa} onChange={e => setForm(f => ({ ...f, porcentaje_grasa: e.target.value }))} style={{ paddingRight: 35 }} />
+                                            <input type="number" step="0.01" className="form-input" placeholder="18.5" value={form.body_fat_pct} onChange={e => setForm(f => ({ ...f, body_fat_pct: e.target.value }))} style={{ paddingRight: 35 }} />
                                             <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>%</span>
                                         </div>
                                     </div>
                                     <div className="form-group" style={{ margin: 0 }}>
                                         <label className="form-label">% Músculo</label>
                                         <div style={{ position: 'relative' }}>
-                                            <input type="number" step="0.01" className="form-input" placeholder="42.0" value={form.porcentaje_musculo} onChange={e => setForm(f => ({ ...f, porcentaje_musculo: e.target.value }))} style={{ paddingRight: 35 }} />
+                                            <input type="number" step="0.01" className="form-input" placeholder="42.0" value={form.muscle_pct} onChange={e => setForm(f => ({ ...f, muscle_pct: e.target.value }))} style={{ paddingRight: 35 }} />
                                             <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>%</span>
                                         </div>
                                     </div>
@@ -502,12 +502,12 @@ export default function Measurements() {
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1.25rem' }}>
                                     {[
-                                        { field: 'cuello_cm', label: 'Cuello' },
-                                        { field: 'pecho_cm', label: 'Pecho' },
-                                        { field: 'cintura_cm', label: 'Cintura' },
-                                        { field: 'cadera_cm', label: 'Cadera' },
-                                        { field: 'brazo_derecho_cm', label: 'Brazo (Der)' },
-                                        { field: 'pierna_derecha_cm', label: 'Pierna (Der)' },
+                                        { field: 'neck_cm', label: 'Cuello' },
+                                        { field: 'chest_cm', label: 'Pecho' },
+                                        { field: 'waist_cm', label: 'Cintura' },
+                                        { field: 'hip_cm', label: 'Cadera' },
+                                        { field: 'right_arm_cm', label: 'Brazo (Der)' },
+                                        { field: 'right_leg_cm', label: 'Pierna (Der)' },
                                     ].map(({ field, label }) => (
                                         <div key={field} className="form-group" style={{ margin: 0 }}>
                                             <label className="form-label">{label}</label>
@@ -525,29 +525,28 @@ export default function Measurements() {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>
                                     <ImageUploadField
                                         label="Foto Frontal"
-                                        url={form.foto_frente_url}
-                                        onUpload={(url) => setForm(f => ({ ...f, foto_frente_url: url }))}
-                                        onRemove={() => setForm(f => ({ ...f, foto_frente_url: '' }))}
+                                        url={form.photo_front_url}
+                                        onUpload={(url) => setForm(f => ({ ...f, photo_front_url: url }))}
+                                        onRemove={() => setForm(f => ({ ...f, photo_front_url: '' }))}
                                     />
                                     <ImageUploadField
                                         label="Foto Perfil"
-                                        url={form.foto_perfil_url}
-                                        onUpload={(url) => setForm(f => ({ ...f, foto_perfil_url: url }))}
-                                        onRemove={() => setForm(f => ({ ...f, foto_perfil_url: '' }))}
+                                        url={form.photo_side_url}
+                                        onUpload={(url) => setForm(f => ({ ...f, photo_side_url: url }))}
+                                        onRemove={() => setForm(f => ({ ...f, photo_side_url: '' }))}
                                     />
                                     <ImageUploadField
                                         label="Foto Espalda"
-                                        url={form.foto_espalda_url}
-                                        onUpload={(url) => setForm(f => ({ ...f, foto_espalda_url: url }))}
-                                        onRemove={() => setForm(f => ({ ...f, foto_espalda_url: '' }))}
+                                        url={form.photo_back_url}
+                                        onUpload={(url) => setForm(f => ({ ...f, photo_back_url: url }))}
+                                        onRemove={() => setForm(f => ({ ...f, photo_back_url: '' }))}
                                     />
                                 </div>
                             </div>
 
-                            {/* Notas */}
                             <div className="form-group" style={{ marginBottom: '2rem' }}>
                                 <label className="form-label">Notas Adicionales</label>
-                                <textarea className="form-input" rows={3} placeholder='Ej: "Se tomó la medida en ayunas, después del entrenamiento..."' value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))} style={{ resize: 'vertical', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)' }} />
+                                <textarea className="form-input" rows={3} placeholder='Ej: "Se tomó la medida en ayunas, después del entrenamiento..."' value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ resize: 'vertical' }} />
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem', marginTop: '1rem' }}>

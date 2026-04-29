@@ -24,9 +24,12 @@ import Staff from './pages/admin/Staff'
 const Exercises = lazy(() => import('./pages/admin/Exercises'))
 const Profile = lazy(() => import('./pages/admin/Profile'))
 const Measurements = lazy(() => import('./pages/admin/Measurements'))
+const AdminDiets = lazy(() => import('./pages/admin/Diets'))
 
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
+const ClientDiets = lazy(() => import('./pages/client/Diets'))
+const ClientRoutines = lazy(() => import('./pages/client/Routines'))
 
 export default function App() {
     const { loading } = useAuth()
@@ -70,6 +73,7 @@ export default function App() {
                 <Route path="reports" element={<Reports />} />
                 <Route path="staff" element={<Staff />} />
                 <Route path="measurements" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Measurements /></Suspense>} />
+                <Route path="diets" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><AdminDiets /></Suspense>} />
                 <Route path="exercises" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Exercises /></Suspense>} />
                 <Route path="profile" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
             </Route>
@@ -83,7 +87,26 @@ export default function App() {
                     </ProtectedRoute>
                 }
             />
-
+            <Route
+                path="/portal/diets"
+                element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><div className="spinner spinner-lg"></div></div>}>
+                            <ClientDiets />
+                        </Suspense>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/portal/routines"
+                element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
+                            <ClientRoutines />
+                        </Suspense>
+                    </ProtectedRoute>
+                }
+            />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
