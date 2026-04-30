@@ -1,11 +1,4 @@
-/* ===================================================
-   RAFAGYM - Design System & Global Styles
-   Premium dark-mode gym aesthetic
-   =================================================== */
-
-/* ─── CSS Custom Properties ─── */
 :root {
-  /* Colors - Primary (Orange/Gold) */
   --primary-50: #fff7ed;
   --primary-100: #ffedd5;
   --primary-200: #fed7aa;
@@ -151,7 +144,9 @@
 }
 
 /* ─── Reset & Base ─── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -184,6 +179,7 @@ a {
   text-decoration: none;
   transition: color var(--transition-fast);
 }
+
 a:hover {
   color: var(--primary-300);
 }
@@ -194,12 +190,20 @@ img {
   display: block;
 }
 
-input, select, textarea, button {
+input,
+select,
+textarea,
+button {
   font-family: inherit;
   font-size: inherit;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: 700;
   line-height: 1.2;
@@ -259,7 +263,11 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
   line-height: 1.4;
 }
-.btn:active { transform: scale(0.97); }
+
+.btn:active {
+  transform: scale(0.97);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -271,6 +279,7 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
   box-shadow: var(--shadow-glow);
 }
+
 .btn-primary:hover:not(:disabled) {
   box-shadow: var(--shadow-glow-lg);
   transform: translateY(-1px);
@@ -281,6 +290,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-primary);
   border: 1px solid var(--border-default);
 }
+
 .btn-secondary:hover:not(:disabled) {
   background: var(--dark-500);
   border-color: var(--border-strong);
@@ -290,6 +300,7 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent;
   color: var(--text-secondary);
 }
+
 .btn-ghost:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
@@ -299,6 +310,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--danger);
   color: white;
 }
+
 .btn-danger:hover:not(:disabled) {
   background: #dc2626;
 }
@@ -419,6 +431,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: var(--space-md);
   transition: all var(--transition-base);
 }
+
 .stat-card:hover {
   border-color: var(--border-default);
   transform: translateY(-2px);
@@ -460,8 +473,13 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 0.25rem;
 }
 
-.stat-card-change.positive { color: var(--success); }
-.stat-card-change.negative { color: var(--danger); }
+.stat-card-change.positive {
+  color: var(--success);
+}
+
+.stat-card-change.negative {
+  color: var(--danger);
+}
 
 /* ─── Table System ─── */
 .table-container {
@@ -580,8 +598,13 @@ h1, h2, h3, h4, h5, h6 {
   animation: slideUp 0.3s ease-out;
 }
 
-.modal-lg { max-width: 800px; }
-.modal-xl { max-width: 1000px; }
+.modal-lg {
+  max-width: 800px;
+}
+
+.modal-xl {
+  max-width: 1000px;
+}
 
 .modal-header {
   display: flex;
@@ -854,8 +877,13 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Animations ─── */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -863,6 +891,7 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -874,6 +903,7 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -881,22 +911,44 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
-.animate-fade-in { animation: fadeIn 0.4s ease-out; }
-.animate-slide-up { animation: slideUp 0.4s ease-out; }
-.animate-slide-down { animation: slideDown 0.3s ease-out; }
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
 
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar {

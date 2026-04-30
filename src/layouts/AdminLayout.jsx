@@ -20,7 +20,6 @@ export default function AdminLayout() {
         navigate('/login')
     }
 
-    // Theme toggle
     const [theme, setTheme] = useState(localStorage.getItem('rafagym-theme') || 'dark')
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme)

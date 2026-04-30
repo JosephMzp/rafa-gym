@@ -1,8 +1,6 @@
 import { supabase } from './supabase'
 
-// ============================================
 // AUTH
-// ============================================
 export async function loginUser(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { success: false, error: error.message }
@@ -64,9 +62,7 @@ export async function getUserProfile(userId) {
     return null
 }
 
-// ============================================
 // STAFF
-// ============================================
 export async function getStaff() {
     const { data, error } = await supabase.from('staff').select('*, roles(id, name)').order('name')
     if (error) { console.error('getStaff error:', error); return [] }
@@ -91,18 +87,14 @@ export async function updateStaff(id, updates) {
     return data
 }
 
-// ============================================
 // sedes
-// ============================================
 export async function getLocations() {
     const { data, error } = await supabase.from('locations').select('*').order('name')
     if (error) { console.error('getLocations error:', error); return [] }
     return data || []
 }
 
-// ============================================
 // ejercicios
-// ============================================
 export async function getExercises() {
     const { data, error } = await supabase.from('exercises').select('*').order('name')
     if (error) { console.error('getExercises error:', error); return [] }
@@ -129,18 +121,14 @@ export async function deleteExercise(id) {
     return true
 }
 
-// ============================================
 // MEMBRESIAS
-// ============================================
 export async function getMembershipTypes() {
     const { data, error } = await supabase.from('membership_types').select('*').order('price')
     if (error) { console.error('getMembershipTypes error:', error); return [] }
     return data || []
 }
 
-// ============================================
 // CLIENTES
-// ============================================
 export async function getClients() {
     const { data, error } = await supabase
         .from('clients')
@@ -186,9 +174,7 @@ export async function deleteClient(id) {
     if (error) throw error
 }
 
-// ============================================
 // MEMBRESÍAS DE CLIENTES
-// ============================================
 export async function createClientMembership(data) {
     // Primero expirar cualquier membresía activa anterior del cliente
     await supabase
@@ -202,9 +188,7 @@ export async function createClientMembership(data) {
     return result
 }
 
-// ============================================
 // PAGOS
-// ============================================
 export async function getPayments() {
     const { data, error } = await supabase
         .from('payments')
@@ -220,9 +204,7 @@ export async function createPayment(paymentData) {
     return data
 }
 
-// ============================================
 // ASISTENCIAS
-// ============================================
 export async function getAttendances() {
     const { data, error } = await supabase
         .from('attendances')
@@ -249,9 +231,7 @@ export async function createAttendance(data) {
     return result
 }
 
-// ============================================
 // INVITADOS
-// ============================================
 export async function getGuests() {
     const { data, error } = await supabase
         .from('guests')
@@ -273,9 +253,7 @@ export async function createGuest(guestData) {
     return data
 }
 
-// ============================================
 // CLASES
-// ============================================
 export async function getClasses() {
     const { data, error } = await supabase
         .from('classes')
@@ -352,10 +330,7 @@ export async function getFitGoldClients() {
     })
 }
 
-// ==========================================
 // Dashboard
-// ==========================================
-
 export async function getActiveClientsWithMembershipView() {
     var res = await supabase.from('clientes_activos_con_membresia').select('*')
     if (res.error) { console.error('Error fetching active clients view:', res.error); return [] }
@@ -374,9 +349,7 @@ export async function getMonthlyRevenueView() {
     return res.data
 }
 
-// ============================================
 // RUTINAS
-// ============================================
 export async function getRoutines() {
     const { data, error } = await supabase
         .from('routines')
@@ -439,9 +412,7 @@ export async function saveRoutineExercises(routineId, exerciseList) {
     return data
 }
 
-// ============================================
 // DASHBOARD STATS
-// ============================================
 export async function getDashboardStats() {
     try {
         const [
@@ -550,10 +521,7 @@ export async function saveTemplateExercises(templateId, exerciseList) {
     }
 }
 
-// ============================================================
-// CLIENT ROUTINE SUBSCRIPTIONS — Suscripciones de clientes
-// ============================================================
-
+//Suscripciones de clientes
 export async function getClientSubscriptions(clientId) {
     const { data, error } = await supabase
         .from('client_routine_subscriptions')
@@ -604,12 +572,10 @@ export async function unsubscribeFromTemplate(clientId, templateId) {
     if (error) throw error
 }
 
-// ============================================
-// DETALLE COMPLETO DE CLIENTE
-// ============================================
+//DETALLE COMPLETO DE CLIENTE
 export async function getClientFullDetail(clientId) {
     const [routinesRes, subscriptionsRes, classesRes, attendancesRes, paymentsRes] = await Promise.all([
-        // 1. Rutinas personales asignadas por el entrenador
+
         supabase
             .from('routines')
             .select('id, name, objective, level, duration, days, trainer_name, created_at, notes')
@@ -618,7 +584,6 @@ export async function getClientFullDetail(clientId) {
             .order('created_at', { ascending: false })
             .limit(5),
 
-        // 2. Suscripciones a programas/plantillas (desde client/Routines.jsx)
         supabase
             .from('client_routine_subscriptions')
             .select(`
@@ -630,7 +595,6 @@ export async function getClientFullDetail(clientId) {
             .order('subscribed_at', { ascending: false })
             .limit(5),
 
-        // 3. Clases matriculadas
         supabase
             .from('class_enrollments')
             .select(`
@@ -641,7 +605,6 @@ export async function getClientFullDetail(clientId) {
             .eq('status', 'active')
             .order('enrolled_at', { ascending: false }),
 
-        // 4. Asistencias recientes
         supabase
             .from('attendances')
             .select('id, check_in, location:locations(name)')
@@ -649,7 +612,6 @@ export async function getClientFullDetail(clientId) {
             .order('check_in', { ascending: false })
             .limit(10),
 
-        // 5. Pagos recientes
         supabase
             .from('payments')
             .select('id, amount, date, status, concept')
@@ -658,10 +620,8 @@ export async function getClientFullDetail(clientId) {
             .limit(5),
     ])
 
-    // Procesar rutinas personalizadas
     const customRoutines = routinesRes.data || [];
 
-    // Procesar rutinas de plantillas (adaptando el formato para que coincida con la vista)
     const templateRoutines = (subscriptionsRes.data || []).map(sub => ({
         id: sub.id,
         name: sub.template?.name || 'Programa de Entrenamiento',
@@ -675,7 +635,6 @@ export async function getClientFullDetail(clientId) {
         notes: 'Suscripción elegida por el cliente desde el portal.'
     }));
 
-    // Combinar ambas listas de rutinas y ordenar por fecha más reciente
     const allRoutines = [...customRoutines, ...templateRoutines].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
@@ -699,9 +658,7 @@ export async function getClientFullDetail(clientId) {
     }
 }
 
-// ============================================================
-// MEDIDAS CORPORALES (body_measurements)
-// ============================================================
+// MEDIDAS CORPORALES
 export async function getMeasurements() {
     const { data, error } = await supabase
         .from('body_measurements')

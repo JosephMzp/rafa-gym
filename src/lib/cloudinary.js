@@ -4,9 +4,8 @@ const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`
 const VIDEO_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`
 
 /**
- * Upload an image file to Cloudinary
- * @param {File} file - The image file to upload
- * @param {string} folder - Optional folder name (e.g., 'clients', 'staff')
+ * @param {File} file
+ * @param {string} folder
  * @returns {Promise<{url: string, public_id: string}>}
  */
 export async function uploadImage(file, folder = 'rafagym') {
