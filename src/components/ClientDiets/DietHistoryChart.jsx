@@ -78,14 +78,14 @@ export default function DietHistoryChart({
                                 <div
                                     key={h.date}
                                     onClick={() => !isEmpty && onSelectDate(h.date)}
-                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: isEmpty ? 'default' : 'pointer' }}
+                                    style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4, cursor: isEmpty ? 'default' : 'pointer' }}
                                 >
-                                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: isEmpty ? 'var(--text-muted)' : isOver ? '#f87171' : reached ? '#6ee7b7' : 'var(--primary-300)', minHeight: 14, textAlign: 'center' }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isEmpty ? 'var(--text-muted)' : isOver ? '#f87171' : reached ? '#6ee7b7' : 'var(--primary-300)', minHeight: 14, textAlign: 'center' }}>
                                         {isEmpty ? '' : h.calories}
                                     </span>
                                     <div style={{
-                                        width: '100%', borderRadius: '6px 6px 3px 3px',
-                                        height: `${Math.max(isEmpty ? 6 : 12, pct * 0.7)}%`,
+                                        width: '100%', maxWidth: '48px', borderRadius: '8px 8px 4px 4px',
+                                        height: `${Math.max(isEmpty ? 6 : 12, pct * 0.65)}%`,
                                         background: barColor,
                                         boxShadow: isSelected ? `${glowColor}, 0 0 0 2px white` : glowColor,
                                         transition: 'height 0.6s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s',
