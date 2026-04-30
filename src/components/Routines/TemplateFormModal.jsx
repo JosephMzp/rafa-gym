@@ -72,7 +72,6 @@ export default function TemplateFormModal({ template, onSave, onClose }) {
                     <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                 </div>
                 <div className="modal-body">
-                    {/* Emoji & Color */}
                     <div style={{ display: 'flex', gap: 'var(--space-xl)', marginBottom: 'var(--space-lg)', alignItems: 'flex-start' }}>
                         <div className="form-group" style={{ margin: 0 }}>
                             <label className="form-label">Ícono</label>
@@ -103,7 +102,6 @@ export default function TemplateFormModal({ template, onSave, onClose }) {
                     <div className="form-group" style={{ marginTop: 'var(--space-md)' }}><label className="form-label">Descripción</label><textarea className="form-input" rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe brevemente esta rutina..." style={{ resize: 'vertical' }} /></div>
                     <div className="form-group"><label className="form-label">Días de entrenamiento</label><div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>{DAYS.map(d => (<button key={d} type="button" className={`btn btn-sm ${days.includes(d) ? 'btn-primary' : 'btn-secondary'}`} onClick={() => toggleDay(d)}>{d}</button>))}</div></div>
 
-                    {/* Exercises */}
                     <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-lg)', marginTop: 'var(--space-md)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
                             <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Ejercicios ({exList.length})</h3>

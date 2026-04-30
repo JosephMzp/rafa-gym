@@ -25,7 +25,6 @@ export default function ClientDetailModal({ client, onClose, onEdit }) {
         }
     }, [client])
 
-    // Membership progress
     const membershipProgress = () => {
         if (!client.membership_start || !client.membership_end) return null
         const start = new Date(client.membership_start).getTime()
@@ -65,7 +64,6 @@ export default function ClientDetailModal({ client, onClose, onEdit }) {
                     position: 'relative',
                     flexShrink: 0,
                 }}>
-                    {/* Close + Edit */}
                     <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
                         <button className="btn btn-secondary btn-sm" onClick={onEdit}>
                             <FiEdit2 size={13} /> Editar
@@ -73,7 +71,6 @@ export default function ClientDetailModal({ client, onClose, onEdit }) {
                         <button className="btn btn-ghost btn-icon" onClick={onClose}><FiX /></button>
                     </div>
 
-                    {/* Avatar + name */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
                         <div style={{ position: 'relative' }}>
                             {client.photo_url ? (
@@ -138,7 +135,6 @@ export default function ClientDetailModal({ client, onClose, onEdit }) {
                     </div>
                 </div>
 
-                {/* ── Tab Content ── */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '1.75rem 2rem' }}>
                     {loadingDetail && activeTab !== 'info' && activeTab !== 'membership' ? (
                         <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
@@ -213,7 +209,6 @@ function TabMembership({ client, mp, color }) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* Main membership card */}
             <div style={{
                 background: `linear-gradient(135deg, ${color}20 0%, var(--surface-card) 100%)`,
                 border: `1px solid ${color}40`, borderRadius: 'var(--radius-xl)', padding: '1.5rem',
@@ -233,7 +228,6 @@ function TabMembership({ client, mp, color }) {
                     </div>
                 </div>
 
-                {/* Progress bar */}
                 {mp && (
                     <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -252,7 +246,6 @@ function TabMembership({ client, mp, color }) {
                 )}
             </div>
 
-            {/* Dates grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 {[
                     { label: 'Fecha de inicio', value: client.membership_start, icon: <FiCalendar size={15} /> },
@@ -511,7 +504,7 @@ function TabMeasurements({ clientId, clientName }) {
             {latest && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '0.5rem' }}>
                     {[
-                        // CORRECCIÓN: Se cambiaron las propiedades al inglés según la BD
+
                         { label: 'Peso', value: latest.weight_kg ? `${latest.weight_kg} kg` : '—' },
                         { label: '% Grasa', value: latest.body_fat_pct ? `${latest.body_fat_pct}%` : '—' },
                         { label: '% Músculo', value: latest.muscle_pct ? `${latest.muscle_pct}%` : '—' },
@@ -535,7 +528,6 @@ function TabMeasurements({ clientId, clientName }) {
                             borderBottom: i < measurements.length - 1 ? '1px solid var(--border-subtle)' : 'none'
                         }}>
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />
-                            {/* CORRECCIÓN: measurement_date y weight_kg */}
                             <div style={{ flex: 1, fontSize: '0.875rem', fontWeight: 600 }}>{m.measurement_date}</div>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{m.weight_kg ? `${m.weight_kg} kg` : '—'}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.registrador_name}</div>
@@ -546,7 +538,6 @@ function TabMeasurements({ clientId, clientName }) {
         </div>
     )
 }
-/* ── Helpers ── */
 function LoadingTab() {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>

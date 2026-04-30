@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FiX } from 'react-icons/fi'
-import ImageUpload from '../ImageUpload' // Asegúrate de ajustar esta ruta
+import ImageUpload from '../ImageUpload'
 
 export default function ClientFormModal({ client, membershipTypes, locations, onSave, onClose }) {
     const [form, setForm] = useState({

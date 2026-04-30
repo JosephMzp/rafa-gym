@@ -113,10 +113,8 @@ export default function Routines() {
                 )}
             </div>
 
-            {/* Stats */}
             <RoutinesStats templates={templates} subscriptions={subscriptions} />
 
-            {/* Tabs */}
             <div className="tabs" style={{ marginBottom: 'var(--space-xl)' }}>
                 <button className={`tab ${tab === 'templates' ? 'active' : ''}`} onClick={() => setTab('templates')}>
                     <FiList size={14} style={{ marginRight: '0.375rem' }} /> Biblioteca de Rutinas
@@ -126,7 +124,6 @@ export default function Routines() {
                 </button>
             </div>
 
-            {/* Filters */}
             <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)', flexWrap: 'wrap' }}>
                 <div className="search-bar" style={{ flex: 1 }}>
                     <span className="search-bar-icon"><FiSearch /></span>

@@ -40,7 +40,7 @@ export default function Measurements() {
         if (user?.isStaff) payload.recorded_by = user.id
         Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null })
 
-        await createMeasurement(payload) // Modal captures the error if it fails
+        await createMeasurement(payload)
         const updated = await getClientMeasurements(selectedClient.id)
         setMeasurements(updated)
         setShowModal(false)
@@ -121,7 +121,6 @@ export default function Measurements() {
                 )}
             </div>
 
-            {/* Contenido Dinámico */}
             {!selectedClient && (
                 <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-muted)', background: 'var(--dark-800)', borderRadius: 'var(--radius-xl)', border: '1px dashed var(--border-subtle)' }}>
                     <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--dark-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
@@ -147,7 +146,6 @@ export default function Measurements() {
                 </>
             )}
 
-            {/* Modal */}
             {showModal && (
                 <MeasurementFormModal
                     selectedClient={selectedClient}

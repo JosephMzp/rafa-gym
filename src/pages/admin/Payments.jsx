@@ -48,7 +48,6 @@ export default function Payments() {
                 status: 'paid'
             })
 
-            // Si es pago de membresía, crear / activar la membresía del cliente
             const isMembership = form.concept === 'Mensualidad' || form.concept === 'Renovación'
             if (isMembership && form.membership_type_id && form.date && form.next_due) {
                 await createClientMembership({

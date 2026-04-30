@@ -68,7 +68,7 @@ export default function Exercises() {
 
     return (
         <div>
-            {/* Cabecera */}
+
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Ejercicios</h1>
@@ -108,7 +108,6 @@ export default function Exercises() {
                 </div>
             </div>
 
-            {/* Componente Grilla */}
             <ExercisesGrid
                 exercises={filtered}
                 onView={setViewingExercise}
@@ -116,7 +115,6 @@ export default function Exercises() {
                 onDelete={handleDelete}
             />
 
-            {/* Modales */}
             <ExerciseViewModal
                 exercise={viewingExercise}
                 onClose={() => setViewingExercise(null)}
