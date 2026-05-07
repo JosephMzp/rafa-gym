@@ -13,19 +13,6 @@ import Login from './pages/public/Login'
 import Dashboard from './pages/admin/Dashboard'
 import Clients from './pages/admin/Clients'
 import Attendance from './pages/admin/Attendance'
-import Payments from './pages/admin/Payments'
-import Memberships from './pages/admin/Memberships'
-import Locations from './pages/admin/Locations'
-import Guests from './pages/admin/Guests'
-import Classes from './pages/admin/Classes'
-const Routines = lazy(() => import('./pages/admin/Routines'))
-import Reports from './pages/admin/Reports'
-import Staff from './pages/admin/Staff'
-const Exercises = lazy(() => import('./pages/admin/Exercises'))
-const Profile = lazy(() => import('./pages/admin/Profile'))
-const Measurements = lazy(() => import('./pages/admin/Measurements'))
-const AdminDiets = lazy(() => import('./pages/admin/Diets'))
-
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
 const ClientDiets = lazy(() => import('./pages/client/Diets'))
@@ -64,19 +51,7 @@ export default function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="clients" element={<Clients />} />
                 <Route path="attendance" element={<Attendance />} />
-                <Route path="payments" element={<Payments />} />
-                <Route path="memberships" element={<Memberships />} />
-                <Route path="locations" element={<Locations />} />
-                <Route path="guests" element={<Guests />} />
-                <Route path="classes" element={<Classes />} />
-                <Route path="routines" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Routines /></Suspense>} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="staff" element={<Staff />} />
-                <Route path="measurements" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Measurements /></Suspense>} />
-                <Route path="diets" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><AdminDiets /></Suspense>} />
-                <Route path="exercises" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Exercises /></Suspense>} />
-                <Route path="profile" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
-            </Route>
+                </Route>
 
             {/* Client portal route */}
             <Route
