@@ -13,6 +13,9 @@ import Login from './pages/public/Login'
 import Dashboard from './pages/admin/Dashboard'
 import Clients from './pages/admin/Clients'
 import Attendance from './pages/admin/Attendance'
+import Payments from './pages/admin/Payments'
+import Memberships from './pages/admin/Memberships'
+
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
 const ClientDiets = lazy(() => import('./pages/client/Diets'))
@@ -51,7 +54,9 @@ export default function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="clients" element={<Clients />} />
                 <Route path="attendance" element={<Attendance />} />
-                </Route>
+                <Route path="payments" element={<Payments />} />
+                <Route path="memberships" element={<Memberships />} />
+            </Route>
 
             {/* Client portal route */}
             <Route
