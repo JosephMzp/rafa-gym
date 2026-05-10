@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -130,7 +130,9 @@ export default function AdminLayout() {
                 </header>
 
                 <div className="admin-content animate-fade-in">
-                    <Outlet />
+                    <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}><div className="spinner spinner-lg"></div></div>}>
+                        <Outlet />
+                    </Suspense>
                 </div>
             </div>
         </div>

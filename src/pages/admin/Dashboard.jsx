@@ -111,8 +111,7 @@ export default function Dashboard() {
         })
         const past6Months = []
         for (let i = 5; i >= 0; i--) {
-            const d = new Date()
-            d.setMonth(d.getMonth() - i)
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
             const mStr = d.toISOString().substring(0, 7)
             const label = d.toLocaleString('es-PE', { month: 'short' })
             past6Months.push({ month: label.charAt(0).toUpperCase() + label.slice(1), revenue: monthlyRevMap[mStr] || 0 })
@@ -204,7 +203,7 @@ export default function Dashboard() {
 
                 <select className="form-input" style={{ width: 'auto', minWidth: 150 }}
                     value={filters.location_id} onChange={(e) => setFilters(f => ({ ...f, location_id: e.target.value }))}>
-                    <option value="all"><FiMapPin size={12} style={{verticalAlign:'middle', marginRight:4}} />Todas las Sedes</option>
+                    <option value="all"><FiMapPin size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />Todas las Sedes</option>
                     {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                 </select>
 

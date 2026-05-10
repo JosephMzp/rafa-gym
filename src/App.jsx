@@ -10,24 +10,24 @@ import Home from './pages/public/Home'
 import Login from './pages/public/Login'
 
 // Admin pages
-import Dashboard from './pages/admin/Dashboard'
-import Clients from './pages/admin/Clients'
-import Attendance from './pages/admin/Attendance'
-import Payments from './pages/admin/Payments'
-import Memberships from './pages/admin/Memberships'
-import Locations from './pages/admin/Locations'
-import Guests from './pages/admin/Guests'
-import Classes from './pages/admin/Classes'
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
+const Clients = lazy(() => import('./pages/admin/Clients'))
+const Attendance = lazy(() => import('./pages/admin/Attendance'))
+const Payments = lazy(() => import('./pages/admin/Payments'))
+const Memberships = lazy(() => import('./pages/admin/Memberships'))
+const Locations = lazy(() => import('./pages/admin/Locations'))
+const Guests = lazy(() => import('./pages/admin/Guests'))
+const Classes = lazy(() => import('./pages/admin/Classes'))
 const Routines = lazy(() => import('./pages/admin/Routines'))
-import Reports from './pages/admin/Reports'
-import Staff from './pages/admin/Staff'
+const Reports = lazy(() => import('./pages/admin/Reports'))
+const Staff = lazy(() => import('./pages/admin/Staff'))
 const Exercises = lazy(() => import('./pages/admin/Exercises'))
 const Profile = lazy(() => import('./pages/admin/Profile'))
 const Measurements = lazy(() => import('./pages/admin/Measurements'))
 const AdminDiets = lazy(() => import('./pages/admin/Diets'))
 
 // Client pages
-import ClientDashboard from './pages/client/ClientDashboard'
+const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'))
 const ClientDiets = lazy(() => import('./pages/client/Diets'))
 const ClientRoutines = lazy(() => import('./pages/client/Routines'))
 
@@ -83,7 +83,9 @@ export default function App() {
                 path="/portal/dashboard"
                 element={
                     <ProtectedRoute allowedRoles={['client']}>
-                        <ClientDashboard />
+                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
+                            <ClientDashboard />
+                        </Suspense>
                     </ProtectedRoute>
                 }
             />
