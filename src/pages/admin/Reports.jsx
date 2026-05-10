@@ -1,128 +1,305 @@
-import { useState, useEffect } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { getClients, getPayments, getAttendances, getLocations, getMembershipTypes } from '../../lib/services'
+import { useState, useEffect, useMemo } from 'react'
+import {
+    FiDollarSign, FiHash, FiTrendingDown,
+    FiActivity, FiUsers, FiAlertTriangle,
+    FiBarChart2,
+} from 'react-icons/fi'
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer,
+} from 'recharts'
+
+import { getClients, getPayments, getAttendances, getLocations } from '../../lib/services'
+
+import ReportsTabs from '../../components/Reports/ReportsTabs'
+import ReportsFilters from '../../components/Reports/ReportsFilters'
+import ReportKPICards from '../../components/Reports/ReportKPICards'
+import ReportDataGrid from '../../components/Reports/ReportDataGrid'
+import ExportButtons from '../../components/Reports/ExportButtons'
+
+const fmt = n => `S/ ${Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const fmtPct = n => `${Number(n).toFixed(1)}%`
+
+function monthsAgo(n) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - n)
+    d.setDate(1)
+    return d.toISOString().split('T')[0]
+}
+
+const TOOLTIP_STYLE = {
+    background: '#1c1c28',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    color: '#f1f5f9',
+}
 
 export default function Reports() {
-    const [activeReport, setActiveReport] = useState('revenue')
+    const [activeTab, setActiveTab] = useState('finance')
+    const [loading, setLoading] = useState(true)
     const [clients, setClients] = useState([])
     const [payments, setPayments] = useState([])
     const [attendances, setAttendances] = useState([])
     const [locations, setLocations] = useState([])
-    const [membershipTypes, setMembershipTypes] = useState([])
-    const [loading, setLoading] = useState(true)
+    const [dateFrom, setDateFrom] = useState(monthsAgo(3))
+    const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0])
+    const [locationId, setLocationId] = useState('all')
 
     useEffect(() => {
-        Promise.all([getClients(), getPayments(), getAttendances(), getLocations(), getMembershipTypes()])
-            .then(([c, p, a, l, m]) => { setClients(c); setPayments(p); setAttendances(a); setLocations(l); setMembershipTypes(m) })
+        setLoading(true)
+        Promise.all([getClients(), getPayments(), getAttendances(), getLocations()])
+            .then(([c, p, a, l]) => {
+                setClients(c)
+                setPayments(p)
+                setAttendances(a)
+                setLocations(l)
+            })
             .catch(console.error)
             .finally(() => setLoading(false))
     }, [])
 
-    if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>
+    const filteredPayments = useMemo(() => {
+        return payments.filter(p => {
+            const inRange = p.date >= dateFrom && p.date <= dateTo
+            const inLoc = locationId === 'all' || String(p.location_id) === String(locationId)
+            return inRange && p.status === 'paid' && inLoc
+        })
+    }, [payments, dateFrom, dateTo, locationId])
 
-    const monthlyRevenue = []
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(); d.setMonth(d.getMonth() - i)
-        const key = d.toISOString().slice(0, 7)
-        const label = d.toLocaleString('es-PE', { month: 'short' })
-        const rev = payments.filter(p => p.date?.startsWith(key) && p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0)
-        monthlyRevenue.push({ month: label.charAt(0).toUpperCase() + label.slice(1), revenue: rev })
+    const filteredAttendances = useMemo(() => {
+        return attendances.filter(a => {
+            const date = a.date || a.check_in?.split('T')[0]
+            const inRange = date >= dateFrom && date <= dateTo
+            const inLoc = locationId === 'all' || String(a.location_id) === String(locationId)
+            return inRange && inLoc
+        })
+    }, [attendances, dateFrom, dateTo, locationId])
+
+    const financeKPIs = useMemo(() => {
+        const total = filteredPayments.reduce((s, p) => s + Number(p.amount), 0)
+        const count = filteredPayments.length
+        const avg = count ? total / count : 0
+        return [
+            { label: 'Ingresos Totales', value: fmt(total), sub: `${count} pagos en el período`, Icon: FiDollarSign, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+            { label: 'Cantidad de Pagos', value: count, sub: `${dateFrom} → ${dateTo}`, Icon: FiHash, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+            { label: 'Ticket Promedio', value: fmt(avg), sub: 'Por transacción', Icon: FiTrendingDown, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+        ]
+    }, [filteredPayments, dateFrom, dateTo])
+
+    const financeRows = useMemo(() =>
+        filteredPayments.map(p => ({
+            id: p.id,
+            date: p.date,
+            client: p.client_name || p.client?.name || '—',
+            concept: p.concept || p.payment_type || '—',
+            amount: fmt(p.amount),
+            amount_raw: Number(p.amount),
+        })),
+        [filteredPayments])
+
+    const financeMonthly = useMemo(() => {
+        const map = {}
+        filteredPayments.forEach(p => {
+            const key = p.date?.slice(0, 7)
+            if (key) map[key] = (map[key] || 0) + Number(p.amount)
+        })
+        return Object.entries(map)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, rev]) => ({
+                month: new Date(key + '-01').toLocaleString('es-PE', { month: 'short' }),
+                revenue: rev,
+            }))
+    }, [filteredPayments])
+
+    const FINANCE_COLUMNS = [
+        { key: 'date', header: 'Fecha' },
+        { key: 'client', header: 'Cliente' },
+        { key: 'concept', header: 'Concepto' },
+        { key: 'amount', header: 'Monto', align: 'right' },
+    ]
+
+    const operationsKPIs = useMemo(() => {
+        const total = filteredAttendances.length
+        const unique = new Set(filteredAttendances.map(a => a.client_id)).size
+        const avg = unique ? (total / unique).toFixed(1) : 0
+        return [
+            { label: 'Total Asistencias', value: total, sub: 'En el período', Icon: FiActivity, color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+            { label: 'Clientes Únicos', value: unique, sub: 'Que asistieron al menos 1x', Icon: FiUsers, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+            { label: 'Asist. Promedio', value: avg, sub: 'Por cliente único', Icon: FiBarChart2, color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
+        ]
+    }, [filteredAttendances])
+
+    const operationsRows = useMemo(() =>
+        filteredAttendances.map(a => ({
+            id: a.id,
+            date: a.date || a.check_in?.split('T')[0] || '—',
+            time: a.time || '—',
+            client: a.client_name || '—',
+            location: (a.location_name || '—').replace('RafaGym - ', ''),
+            membership: a.membership_type || '—',
+        })),
+        [filteredAttendances])
+
+    const attendanceByDay = useMemo(() => {
+        const DAY = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+        const map = {}
+        filteredAttendances.forEach(a => {
+            const d = new Date(a.check_in || a.date)
+            const key = DAY[d.getDay()]
+            map[key] = (map[key] || 0) + 1
+        })
+        return ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => ({
+            day, count: map[day] || 0,
+        }))
+    }, [filteredAttendances])
+
+    const OPS_COLUMNS = [
+        { key: 'date', header: 'Fecha' },
+        { key: 'time', header: 'Hora' },
+        { key: 'client', header: 'Cliente' },
+        { key: 'location', header: 'Sede' },
+        { key: 'membership', header: 'Membresía' },
+    ]
+
+    const retentionKPIs = useMemo(() => {
+        const periodStart = new Date(dateFrom)
+        const activeAtStart = clients.filter(c => {
+            const joined = new Date(c.created_at || c.membership_start || '2000-01-01')
+            return joined <= periodStart && c.status === 'active'
+        }).length
+
+        const cancellations = clients.filter(c => {
+            if (c.status !== 'inactive') return false
+            const upd = (c.updated_at || '').split('T')[0]
+            return upd >= dateFrom && upd <= dateTo
+        }).length
+
+        const churnRate = activeAtStart > 0 ? (cancellations / activeAtStart) * 100 : 0
+        const retentionRate = 100 - churnRate
+
+        return [
+            { label: 'Churn Rate', value: fmtPct(churnRate), sub: 'Cancelaciones / Base anterior', Icon: FiAlertTriangle, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+            { label: 'Retención', value: fmtPct(retentionRate), sub: '100% − Churn', Icon: FiUsers, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+            { label: 'Cancelaciones', value: cancellations, sub: `Base activa: ${activeAtStart}`, Icon: FiTrendingDown, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+        ]
+    }, [clients, dateFrom, dateTo])
+
+    const retentionRows = useMemo(() => {
+        return clients
+            .filter(c => {
+                if (c.status !== 'inactive') return false
+                const upd = (c.updated_at || '').split('T')[0]
+                return upd >= dateFrom && upd <= dateTo
+            })
+            .map(c => ({
+                id: c.id,
+                name: c.name,
+                location: (c.location_name || '—').replace('RafaGym - ', ''),
+                membership: c.membership_type?.name || '—',
+                cancelled: (c.updated_at || '').split('T')[0],
+            }))
+    }, [clients, dateFrom, dateTo])
+
+    const RETENTION_COLUMNS = [
+        { key: 'name', header: 'Cliente' },
+        { key: 'location', header: 'Sede' },
+        { key: 'membership', header: 'Membresía' },
+        { key: 'cancelled', header: 'Fecha de baja' },
+    ]
+
+    if (loading) return (
+        <div style={{ textAlign: 'center', padding: '6rem' }}>
+            <div className="spinner spinner-lg" />
+            <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-md)' }}>Cargando reportes…</p>
+        </div>
+    )
+
+    const tabConfig = {
+        finance: { kpis: financeKPIs, rows: financeRows, columns: FINANCE_COLUMNS, filename: 'Reporte_Finanzas', sheet: 'Finanzas' },
+        operations: { kpis: operationsKPIs, rows: operationsRows, columns: OPS_COLUMNS, filename: 'Reporte_Asistencias', sheet: 'Asistencias' },
+        retention: { kpis: retentionKPIs, rows: retentionRows, columns: RETENTION_COLUMNS, filename: 'Reporte_Retencion', sheet: 'Retención' },
     }
-
-    const locationRevenue = locations.map(l => {
-        const locClients = clients.filter(c => c.location?.id === l.id)
-        const rev = payments.filter(p => locClients.some(c => c.id === p.client_id) && p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0)
-        return { name: l.name.replace('RafaGym - ', ''), revenue: rev }
-    })
-
-    const membershipDist = membershipTypes.map(mt => ({
-        name: mt.name, value: clients.filter(c => c.membership_type?.id === mt.id && c.status === 'active').length, color: mt.color
-    }))
-
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab']
-    const weeklyAttendance = [1, 2, 3, 4, 5, 6].map(dayNum => ({
-        day: dayNames[dayNum % 7], count: attendances.filter(a => { const d = new Date(a.check_in || a.date); return d.getDay() === dayNum % 7 }).length
-    }))
-
-    const reports = [{ id: 'revenue', label: 'Ingresos' }, { id: 'attendance', label: 'Asistencia' }, { id: 'clients', label: 'Clientes' }, { id: 'memberships', label: 'Membresías' }]
-    const tooltipStyle = { background: '#1c1c28', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#f1f5f9' }
+    const { kpis, rows, columns, filename, sheet } = tabConfig[activeTab]
 
     return (
         <div>
-            <div className="page-header"><div><h1 className="page-title">Reportes</h1><p className="page-subtitle">Análisis y estadísticas del gimnasio</p></div></div>
-
-            <div className="tabs" style={{ marginBottom: 'var(--space-xl)' }}>
-                {reports.map(r => <button key={r.id} className={`tab ${activeReport === r.id ? 'active' : ''}`} onClick={() => setActiveReport(r.id)}>{r.label}</button>)}
+            {/* Header */}
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">Reportes</h1>
+                    <p className="page-subtitle">Análisis corporativo del gimnasio</p>
+                </div>
+                <ExportButtons
+                    filename={filename}
+                    sheetName={sheet}
+                    columns={columns}
+                    rows={rows}
+                />
             </div>
 
-            {activeReport === 'revenue' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
-                    <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Ingresos Mensuales</h3>
-                        <ResponsiveContainer width="100%" height={300}><BarChart data={monthlyRevenue}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" /><XAxis dataKey="month" stroke="#64748b" fontSize={12} /><YAxis stroke="#64748b" fontSize={12} />
-                            <Tooltip contentStyle={tooltipStyle} formatter={v => [`S/ ${v}`, 'Ingresos']} /><Bar dataKey="revenue" fill="#f97316" radius={[4, 4, 0, 0]} />
-                        </BarChart></ResponsiveContainer>
-                    </div>
-                    <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Ingresos por Sede</h3>
-                        <ResponsiveContainer width="100%" height={300}><BarChart data={locationRevenue} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" /><XAxis type="number" stroke="#64748b" fontSize={12} /><YAxis type="category" dataKey="name" stroke="#64748b" fontSize={12} width={100} />
-                            <Tooltip contentStyle={tooltipStyle} formatter={v => [`S/ ${v}`, 'Ingresos']} /><Bar dataKey="revenue" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                        </BarChart></ResponsiveContainer>
-                    </div>
+            {/* Tabs */}
+            <ReportsTabs active={activeTab} onChange={setActiveTab} />
+
+            {/* Filters */}
+            <ReportsFilters
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                locationId={locationId}
+                locations={locations}
+                onDateFrom={setDateFrom}
+                onDateTo={setDateTo}
+                onLocation={setLocationId}
+            />
+
+            {/* KPI Cards */}
+            <ReportKPICards cards={kpis} />
+
+            {/* Charts — only in Finance and Operations */}
+            {activeTab === 'finance' && financeMonthly.length > 0 && (
+                <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)', fontSize: '1rem' }}>
+                        Ingresos por Mes
+                    </h3>
+                    <ResponsiveContainer width="100%" height={260}>
+                        <BarChart data={financeMonthly} barSize={36}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                            <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
+                            <YAxis stroke="#64748b" fontSize={12} tickFormatter={v => `S/${v}`} />
+                            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [fmt(v), 'Ingresos']} />
+                            <Bar dataKey="revenue" fill="var(--primary-500)" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             )}
 
-            {activeReport === 'attendance' && (
-                <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Asistencia Semanal</h3>
-                    <ResponsiveContainer width="100%" height={350}><BarChart data={weeklyAttendance}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" /><XAxis dataKey="day" stroke="#64748b" fontSize={12} /><YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip contentStyle={tooltipStyle} /><Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                    </BarChart></ResponsiveContainer>
+            {activeTab === 'operations' && (
+                <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)', fontSize: '1rem' }}>
+                        Asistencia por Día de la Semana
+                    </h3>
+                    <ResponsiveContainer width="100%" height={240}>
+                        <BarChart data={attendanceByDay} barSize={36}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                            <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
+                            <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
+                            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={v => [v, 'Asistencias']} />
+                            <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             )}
 
-            {activeReport === 'clients' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
-                    <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Estado de Clientes</h3>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-2xl)' }}>
-                            <div style={{ textAlign: 'center' }}><div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 900, color: 'var(--success)' }}>{clients.filter(c => c.status === 'active').length}</div><div style={{ color: 'var(--text-secondary)' }}>Activos</div></div>
-                            <div style={{ textAlign: 'center' }}><div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 900, color: 'var(--danger)' }}>{clients.filter(c => c.status === 'inactive').length}</div><div style={{ color: 'var(--text-secondary)' }}>Inactivos</div></div>
-                        </div>
-                    </div>
-                    <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Clientes por Sede</h3>
-                        {locations.map(l => {
-                            const count = clients.filter(c => c.location?.id === l.id && c.status === 'active').length
-                            return <div key={l.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                                <span style={{ fontSize: '0.9375rem' }}>{l.name.replace('RafaGym - ', '')}</span><span className="badge badge-primary">{count} clientes</span>
-                            </div>
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {activeReport === 'memberships' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
-                    <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Distribución</h3>
-                        <ResponsiveContainer width="100%" height={250}><PieChart>
-                            <Pie data={membershipDist} cx="50%" cy="50%" outerRadius={90} dataKey="value" label={({ name, value }) => `${name} (${value})`}>
-                                {membershipDist.map((e, i) => <Cell key={i} fill={e.color} />)}
-                            </Pie><Tooltip contentStyle={tooltipStyle} />
-                        </PieChart></ResponsiveContainer>
-                    </div>
-                    <div className="card"><h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-lg)' }}>Pagos Pendientes</h3>
-                        {payments.filter(p => p.status === 'overdue').length === 0 ? (
-                            <div className="empty-state"><p>✅ Sin pagos pendientes</p></div>
-                        ) : (
-                            payments.filter(p => p.status === 'overdue').map(p => (
-                                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                                    <div><div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{p.client_name}</div><div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Venció: {p.next_due}</div></div>
-                                    <span className="badge badge-danger">S/ {Number(p.amount).toFixed(2)}</span>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            )}
+            {/* Data Grid */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                    {rows.length} registro{rows.length !== 1 ? 's' : ''}
+                </span>
+            </div>
+            <ReportDataGrid
+                columns={columns}
+                rows={rows}
+                rowKey="id"
+            />
         </div>
     )
 }
