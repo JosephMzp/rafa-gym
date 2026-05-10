@@ -89,10 +89,18 @@ export default function ClientDashboard() {
             const { data: payData } = await supabase.from('payments').select('*').eq('client_id', clientId).order('date', { ascending: false }).limit(5)
             setPayments(payData || [])
 
-            const { data: clsData } = await supabase.from('class_enrollments').select('*, class:classes(name, instructor, schedule)').eq('client_id', clientId).eq('status', 'active')
+            const { data: clsData } = await supabase
+                .from('class_enrollments')
+                .select('*, class:classes(name, instructor, days_of_week, start_time, end_time)')
+                .eq('client_id', clientId)
+                .eq('status', 'active')
             setClasses(clsData || [])
 
-            const { data: allClsData } = await supabase.from('classes').select('*, location:locations(name), class_enrollments(id, client_id)').eq('status', 'active').order('name')
+            const { data: allClsData } = await supabase
+                .from('classes')
+                .select('*, location:locations(name), class_enrollments(id, client_id), days_of_week, start_time, end_time')
+                .eq('status', 'active')
+                .order('name')
             setAllClasses(allClsData || [])
 
         } catch (err) { console.error(err) }

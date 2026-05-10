@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { getClients } from '../../lib/services'
 import { supabase } from '../../lib/supabase'
-import { FiSearch, FiUser, FiX, FiHeart } from 'react-icons/fi'
+import { FiSearch, FiUser, FiX, FiHeart, FiCalendar, FiGrid } from 'react-icons/fi'
 
 import GoalsSection from '../../components/AdminDiets/GoalsSection'
 import WeeklyPlanSection from '../../components/AdminDiets/WeeklyPlanSection'
 import GoalsModal from '../../components/AdminDiets/GoalsModal'
 import AdminFoodSearchModal from '../../components/AdminDiets/AdminFoodSearchModal'
+import DailyFoodLogViewer from '../../components/AdminDiets/DailyFoodLogViewer'
 
 const MEAL_TYPES = [
     { label: 'Desayuno', value: 'Breakfast' },
@@ -16,6 +17,21 @@ const MEAL_TYPES = [
 
 const WEEKDAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
+const TABS = [
+    { id: 'planning', label: 'Planificación', Icon: FiGrid },
+    { id: 'tracking', label: 'Seguimiento Diario', Icon: FiCalendar },
+]
+
+function getTodayStr() {
+    return new Date().toISOString().split('T')[0]
+}
+
+function shiftDate(dateStr, days) {
+    const d = new Date(dateStr)
+    d.setDate(d.getDate() + days)
+    return d.toISOString().split('T')[0]
+}
+
 export default function Diets() {
     const [clients, setClients] = useState([])
     const [selectedClient, setSelectedClient] = useState(null)
@@ -23,18 +39,21 @@ export default function Diets() {
     const [showDropdown, setShowDropdown] = useState(false)
     const [loadingData, setLoadingData] = useState(false)
 
+    // TABS
+    const [activeTab, setActiveTab] = useState('planning')
+
     // DATOS NUTRICIONALES
     const [goals, setGoals] = useState(null)
     const [template, setTemplate] = useState(null)
     const [meals, setMeals] = useState([])
 
-    //ESTADOS CALCULADORA METABÓLICA
+    // ESTADOS CALCULADORA METABÓLICA
     const [showGoalsModal, setShowGoalsModal] = useState(false)
     const [objetivo, setObjetivo] = useState('Mantener peso')
     const [calculating, setCalculating] = useState(false)
     const [calcError, setCalcError] = useState('')
 
-    // ESTADOS PLAN SEMANAL Y BUSCADOR 
+    // ESTADOS PLAN SEMANAL Y BUSCADOR
     const [showFoodModal, setShowFoodModal] = useState(false)
     const [selectedMeal, setSelectedMeal] = useState(MEAL_TYPES[0])
     const [foodQuery, setFoodQuery] = useState('')
@@ -44,33 +63,76 @@ export default function Diets() {
     const [copyFromDay, setCopyFromDay] = useState(null)
     const debounceRef = useRef(null)
 
+    // SEGUIMIENTO DIARIO (admin view)
+    const [trackingDate, setTrackingDate] = useState(getTodayStr())
+    const [dailyLogs, setDailyLogs] = useState([])
+    const [loadingLogs, setLoadingLogs] = useState(false)
+
     useEffect(() => { getClients().then(setClients) }, [])
 
     useEffect(() => {
         if (!selectedClient) {
-            setGoals(null); setTemplate(null); setMeals([])
+            setGoals(null); setTemplate(null); setMeals([]); setDailyLogs([])
             return
         }
         loadDietData(selectedClient.id)
     }, [selectedClient])
 
+    // Reload logs when client or date changes (and tracking tab may be active)
+    useEffect(() => {
+        if (!selectedClient) return
+        loadDailyLogs(selectedClient.id, trackingDate)
+    }, [selectedClient, trackingDate])
+
     const loadDietData = async (clientId) => {
         setLoadingData(true)
         try {
-            const { data: goalsData } = await supabase.from('nutrition_goals').select('*').eq('client_id', clientId).order('assigned_at', { ascending: false }).limit(1)
+            const { data: goalsData } = await supabase
+                .from('nutrition_goals').select('*')
+                .eq('client_id', clientId)
+                .order('assigned_at', { ascending: false }).limit(1)
             setGoals(goalsData?.[0] || null)
 
-            const { data: tplData } = await supabase.from('diet_templates').select('*').eq('client_id', clientId).eq('active', true).limit(1)
+            const { data: tplData } = await supabase
+                .from('diet_templates').select('*')
+                .eq('client_id', clientId).eq('active', true).limit(1)
 
             if (tplData?.[0]) {
                 setTemplate(tplData[0])
-                const { data: mealsData } = await supabase.from('template_meals').select('*').eq('template_id', tplData[0].id)
+                const { data: mealsData } = await supabase
+                    .from('template_meals').select('*')
+                    .eq('template_id', tplData[0].id)
                 setMeals(mealsData || [])
             } else {
                 setTemplate(null); setMeals([])
             }
         } catch (err) { console.error(err) }
         finally { setLoadingData(false) }
+    }
+
+    const loadDailyLogs = useCallback(async (clientId, date) => {
+        setLoadingLogs(true)
+        try {
+            const { data, error } = await supabase
+                .from('daily_food_logs')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('log_date', date)
+                .order('created_at', { ascending: true })
+            if (error) throw error
+            setDailyLogs(data || [])
+        } catch (err) {
+            console.error('Error loading daily logs:', err)
+            setDailyLogs([])
+        } finally {
+            setLoadingLogs(false)
+        }
+    }, [])
+
+    const handlePrevDay = () => setTrackingDate(d => shiftDate(d, -1))
+    const handleNextDay = () => {
+        const next = shiftDate(trackingDate, 1)
+        if (next <= getTodayStr()) setTrackingDate(next)
     }
 
     const filtered = useMemo(() =>
@@ -118,7 +180,8 @@ export default function Diets() {
         try {
             let currentTemplate = template
             if (!currentTemplate) {
-                const { data, error } = await supabase.from('diet_templates').insert({ client_id: selectedClient.id, name: 'Dieta Principal', active: true }).select()
+                const { data, error } = await supabase.from('diet_templates')
+                    .insert({ client_id: selectedClient.id, name: 'Dieta Principal', active: true }).select()
                 if (error) throw error
                 currentTemplate = data[0]
                 setTemplate(currentTemplate)
@@ -177,7 +240,7 @@ export default function Diets() {
                         </div>
                         Gestión de Dietas
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: '1rem' }}>Calculadora metabólica y asignación de plantillas</p>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: '1rem' }}>Calculadora metabólica, planificación y seguimiento de clientes</p>
                 </div>
             </div>
 
@@ -228,27 +291,77 @@ export default function Diets() {
             ) : loadingData ? (
                 <div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg" /></div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
-                    <GoalsSection
-                        goals={goals}
-                        onOpenCalcModal={() => setShowGoalsModal(true)}
-                    />
+                <>
+                    {/* ── TABS ── */}
+                    <div style={{
+                        display: 'flex', gap: 4,
+                        marginBottom: 'var(--space-xl)',
+                        background: 'var(--dark-800)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: 4,
+                        width: 'fit-content',
+                        border: '1px solid var(--border-subtle)',
+                    }}>
+                        {TABS.map(tab => {
+                            const isActive = activeTab === tab.id
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 8,
+                                        padding: '10px 20px',
+                                        borderRadius: 'var(--radius-md)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem', fontWeight: 700,
+                                        fontFamily: 'var(--font-display)',
+                                        transition: 'all 0.2s ease',
+                                        background: isActive ? 'var(--danger)' : 'transparent',
+                                        color: isActive ? 'white' : 'var(--text-secondary)',
+                                        boxShadow: isActive ? '0 2px 10px rgba(225, 29, 72, 0.35)' : 'none',
+                                    }}
+                                >
+                                    <tab.Icon size={15} />
+                                    {tab.label}
+                                </button>
+                            )
+                        })}
+                    </div>
 
-                    <WeeklyPlanSection
-                        goals={goals}
-                        template={template}
-                        meals={meals}
-                        selectedDay={selectedDay}
-                        setSelectedDay={setSelectedDay}
-                        WEEKDAYS={WEEKDAYS}
-                        MEAL_TYPES={MEAL_TYPES}
-                        copyFromDay={copyFromDay}
-                        setCopyFromDay={setCopyFromDay}
-                        handleCopyDay={handleCopyDay}
-                        onOpenFoodModal={openFoodModal}
-                        handleRemoveFood={handleRemoveFood}
-                    />
-                </div>
+                    {/* ── TAB CONTENT ── */}
+                    {activeTab === 'planning' ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
+                            <GoalsSection
+                                goals={goals}
+                                onOpenCalcModal={() => setShowGoalsModal(true)}
+                            />
+                            <WeeklyPlanSection
+                                goals={goals}
+                                template={template}
+                                meals={meals}
+                                selectedDay={selectedDay}
+                                setSelectedDay={setSelectedDay}
+                                WEEKDAYS={WEEKDAYS}
+                                MEAL_TYPES={MEAL_TYPES}
+                                copyFromDay={copyFromDay}
+                                setCopyFromDay={setCopyFromDay}
+                                handleCopyDay={handleCopyDay}
+                                onOpenFoodModal={openFoodModal}
+                                handleRemoveFood={handleRemoveFood}
+                            />
+                        </div>
+                    ) : (
+                        <DailyFoodLogViewer
+                            logs={dailyLogs}
+                            selectedDate={trackingDate}
+                            onPrevDay={handlePrevDay}
+                            onNextDay={handleNextDay}
+                            goals={goals}
+                            loading={loadingLogs}
+                        />
+                    )}
+                </>
             )}
 
             <GoalsModal

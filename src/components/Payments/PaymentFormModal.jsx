@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { FiX, FiSearch, FiAlertCircle, FiDollarSign } from 'react-icons/fi'
+import { formatSchedule } from '../../lib/classHelpers'
 
 export default function PaymentFormModal({ clients, membershipTypes, classes, onSave, onClose }) {
     const activeClients = clients.filter(c => c.status === 'active')
@@ -308,7 +309,7 @@ export default function PaymentFormModal({ clients, membershipTypes, classes, on
                                         <select className="form-input" value={form.class_id} onChange={e => handleChange('class_id', e.target.value)}>
                                             {activeClasses.map(c => (
                                                 <option key={c.id} value={c.id}>
-                                                    {c.name} — S/ {Number(c.price_standard).toFixed(2)} ({c.schedule})
+                                                    {c.name} — S/ {Number(c.price_standard).toFixed(2)} ({formatSchedule(c.days_of_week, c.start_time, c.end_time)})
                                                 </option>
                                             ))}
                                         </select>
@@ -321,7 +322,7 @@ export default function PaymentFormModal({ clients, membershipTypes, classes, on
                                                 <div>
                                                     <div style={{ fontWeight: 700, color: 'var(--primary-400)' }}>{selectedClass.name}</div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
-                                                        📍 {selectedClass.location_name} • 🕐 {selectedClass.schedule}
+                                                        📍 {selectedClass.location_name} • 🕐 {formatSchedule(selectedClass.days_of_week, selectedClass.start_time, selectedClass.end_time)}
                                                     </div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                         👤 Instructor: {selectedClass.instructor} • {selectedClass.enrolled}/{selectedClass.capacity} inscritos

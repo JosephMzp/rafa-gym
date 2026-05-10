@@ -1,10 +1,12 @@
-import { FiUsers, FiClock, FiMapPin, FiEye, FiUserPlus } from 'react-icons/fi'
+import { FiUsers, FiClock, FiMapPin, FiEye, FiUserPlus, FiEdit2 } from 'react-icons/fi'
+import { formatSchedule } from '../../lib/classHelpers'
 
-export default function ClassesGrid({ classes, onView, onEnroll }) {
+export default function ClassesGrid({ classes, onView, onEnroll, onEdit }) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 'var(--space-lg)' }}>
             {classes.map(cls => {
                 const fill = cls.capacity > 0 ? Math.round((cls.enrolled / cls.capacity) * 100) : 0
+                const scheduleStr = formatSchedule(cls.days_of_week, cls.start_time, cls.end_time)
                 return (
                     <div key={cls.id} className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-lg)' }}>
@@ -20,7 +22,7 @@ export default function ClassesGrid({ classes, onView, onEnroll }) {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: 'var(--space-lg)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                <FiClock size={14} /> {cls.schedule}
+                                <FiClock size={14} /> {scheduleStr}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                 <FiMapPin size={14} /> {cls.location_name}
@@ -50,6 +52,11 @@ export default function ClassesGrid({ classes, onView, onEnroll }) {
                             <span className="badge badge-info">Fit/Gold: Gratis</span>
                         </div>
                         <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                            {onEdit && (
+                                <button className="btn btn-sm btn-ghost btn-icon" style={{ flexShrink: 0 }} onClick={() => onEdit(cls)} title="Editar clase">
+                                    <FiEdit2 size={14} />
+                                </button>
+                            )}
                             <button className="btn btn-sm btn-ghost" style={{ flex: 1 }} onClick={() => onView(cls)}>
                                 <FiEye size={14} /> Ver Inscritos
                             </button>

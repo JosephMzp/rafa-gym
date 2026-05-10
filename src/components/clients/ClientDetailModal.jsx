@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fi'
 import { getClientFullDetail, getClientMeasurements } from '../../lib/services'
 import { getOptimizedUrl } from '../../lib/cloudinary'
+import { formatSchedule, formatDays } from '../../lib/classHelpers'
 
 
 export default function ClientDetailModal({ client, onClose, onEdit }) {
@@ -331,13 +332,11 @@ function TabClasses({ classes, loading }) {
     if (loading) return <LoadingTab />
     if (!classes.length) return <EmptyTab icon={<FiBookOpen />} title="Sin clases matriculadas" desc="Este cliente no está inscrito en ninguna clase grupal activa." />
 
-    const dayNames = { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom' }
-
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.875rem' }}>
             {classes.map(e => {
-                const sched = e.schedule || {}
-                const days = Object.entries(sched).filter(([, v]) => v).map(([k]) => dayNames[k] || k)
+                const days = e.days_of_week || []
+                const scheduleStr = formatSchedule(days, e.start_time, e.end_time)
                 return (
                     <div key={e.id} style={{
                         background: 'var(--surface-card)', border: '1px solid var(--border-subtle)',
@@ -354,15 +353,25 @@ function TabClasses({ classes, loading }) {
                                 {e.instructor}
                             </div>
                         )}
+                        {/* Day badges */}
                         {days.length > 0 && (
-                            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                                {days.map(d => (
+                            <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                                {formatDays(days).split(', ').map(d => (
                                     <span key={d} style={{
-                                        padding: '0.15rem 0.5rem', background: 'rgba(249,115,22,0.1)',
-                                        color: 'var(--primary-400)', borderRadius: 'var(--radius-full)',
-                                        fontSize: '0.72rem', fontWeight: 700
+                                        padding: '0.12rem 0.45rem',
+                                        background: 'rgba(249,115,22,0.12)',
+                                        color: 'var(--primary-400)',
+                                        borderRadius: 'var(--radius-full)',
+                                        fontSize: '0.7rem', fontWeight: 700
                                     }}>{d}</span>
                                 ))}
+                            </div>
+                        )}
+                        {/* Time range */}
+                        {scheduleStr && scheduleStr !== '—' && (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <FiClock size={12} style={{ flexShrink: 0 }} />
+                                {scheduleStr}
                             </div>
                         )}
                         {e.location_name && (
@@ -372,7 +381,7 @@ function TabClasses({ classes, loading }) {
                             </div>
                         )}
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-                            Matriculado: {new Date(e.enrolled_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            Matriculado: {e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </div>
                     </div>
                 )

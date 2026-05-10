@@ -1,4 +1,5 @@
 import { FiUsers, FiAward, FiUser, FiClock } from 'react-icons/fi'
+import { formatSchedule } from '../../lib/classHelpers'
 
 export default function ClassesEnrollment({
     membershipName, allClasses, user, enrollMsg, enrolling, handleEnroll
@@ -50,7 +51,8 @@ export default function ClassesEnrollment({
                                     )}
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.625rem' }}>
-                                    <FiClock size={12} style={{ marginRight: 3, verticalAlign: 'middle' }} /> {cls.schedule}
+                                    <FiClock size={12} style={{ marginRight: 3, verticalAlign: 'middle' }} />
+                                    {formatSchedule(cls.days_of_week, cls.start_time, cls.end_time)}
                                 </div>
                                 <div style={{ marginBottom: '0.625rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>

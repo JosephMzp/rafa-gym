@@ -1,21 +1,7 @@
 import { FiCalendar } from 'react-icons/fi'
+import { getDayFullNames, fmtTime } from '../../lib/classHelpers'
 
 const WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-
-function parseClassDays(scheduleStr) {
-    if (!scheduleStr) return []
-    const str = scheduleStr.toLowerCase()
-    const res = []
-    if (str.includes('lun-vie')) return ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
-    if (str.includes('lun')) res.push('Lunes')
-    if (str.includes('mar')) res.push('Martes')
-    if (str.includes('mié') || str.includes('mie')) res.push('Miércoles')
-    if (str.includes('jue')) res.push('Jueves')
-    if (str.includes('vie')) res.push('Viernes')
-    if (str.includes('sab') || str.includes('sáb')) res.push('Sábado')
-    if (str.includes('dom')) res.push('Domingo')
-    return res
-}
 
 export default function ClientCalendar({ classes, calView, setCalendarView, calendarMonth, setCalendarMonth }) {
     const today = new Date()
@@ -26,17 +12,18 @@ export default function ClientCalendar({ classes, calView, setCalendarView, cale
 
     const getDow = (dt) => { const js = dt.getDay(); return js === 0 ? 6 : js - 1 }
 
-    const getTimeMinutes = (scheduleStr) => {
-        if (!scheduleStr) return 9999
-        const m = scheduleStr.match(/(\d{1,2}):(\d{2})/)
+    // Returns time in minutes for sorting (uses start_time field directly)
+    const getTimeMinutes = (start_time) => {
+        if (!start_time) return 9999
+        const m = start_time.match(/(\d{1,2}):(\d{2})/)
         return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 9999
     }
 
     const sortedDayClasses = (dayName) => {
         return classes
-            .filter(c => parseClassDays(c.class?.schedule).includes(dayName))
+            .filter(c => getDayFullNames(c.class?.days_of_week || []).includes(dayName))
             .slice()
-            .sort((a, b) => getTimeMinutes(a.class?.schedule) - getTimeMinutes(b.class?.schedule))
+            .sort((a, b) => getTimeMinutes(a.class?.start_time) - getTimeMinutes(b.class?.start_time))
     }
 
     const renderDayCell = (opts) => {
@@ -63,8 +50,7 @@ export default function ClientCalendar({ classes, calView, setCalendarView, cale
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {dayClasses2.map(c => {
-                        const timeMatch = c.class?.schedule ? c.class.schedule.match(/\d{1,2}:\d{2}/) : null
-                        const timeStr = timeMatch ? timeMatch[0] : ''
+                        const timeStr = fmtTime(c.class?.start_time)
                         return (
                             <div key={c.id} style={{ fontSize: '0.625rem', background: 'rgba(139,92,246,0.2)', color: '#8b5cf6', padding: '1px 4px', borderRadius: 3, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {timeStr && <span style={{ marginRight: 2, opacity: 0.8 }}>{timeStr}</span>}{c.class?.name}

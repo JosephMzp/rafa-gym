@@ -263,12 +263,20 @@ export async function getClasses() {
     return (data || []).map(c => ({
         ...c,
         location_name: c.location?.name || '',
-        enrolled: c.class_enrollments?.length || 0
+        enrolled: c.class_enrollments?.length || 0,
+        // Ensure arrays are never null
+        days_of_week: c.days_of_week || [],
     }))
 }
 
 export async function createClass(classData) {
     const { data, error } = await supabase.from('classes').insert(classData).select().single()
+    if (error) throw error
+    return data
+}
+
+export async function updateClass(id, classData) {
+    const { data, error } = await supabase.from('classes').update(classData).eq('id', id).select().single()
     if (error) throw error
     return data
 }
@@ -599,7 +607,7 @@ export async function getClientFullDetail(clientId) {
             .from('class_enrollments')
             .select(`
                 id, enrolled_at, status,
-                class:classes(id, name, schedule, instructor, capacity, location:locations(name))
+                class:classes(id, name, days_of_week, start_time, end_time, instructor, capacity, location:locations(name))
             `)
             .eq('client_id', clientId)
             .eq('status', 'active')
@@ -643,9 +651,11 @@ export async function getClientFullDetail(clientId) {
         routines: allRoutines,
         classes: (classesRes.data || []).map(e => ({
             ...e,
-            class_name: e.class?.name || '',
-            schedule: e.class?.schedule || '',
-            instructor: e.class?.instructor || '',
+            class_name:   e.class?.name        || '',
+            days_of_week: e.class?.days_of_week || [],
+            start_time:   e.class?.start_time   || '',
+            end_time:     e.class?.end_time     || '',
+            instructor:   e.class?.instructor   || '',
             location_name: e.class?.location?.name || '',
         })),
         attendances: (attendancesRes.data || []).map(a => ({
