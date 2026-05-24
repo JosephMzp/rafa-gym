@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FiZap, FiEdit2, FiSun, FiMoon, FiLogOut } from 'react-icons/fi'
+import { FiZap, FiEdit2, FiSun, FiMoon, FiLogOut, FiActivity } from 'react-icons/fi'
 
 function optimizeUrl(url, w, h) {
     if (!url || !url.includes('cloudinary.com')) return url
@@ -33,6 +33,15 @@ export default function ClientNavbar({ user, theme, toggleTheme, handleLogout, o
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'var(--dark-700)' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}>
                     <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Mi Dieta</span>
+                </Link>
+
+                <Link to="/portal/measurements"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit', cursor: 'pointer', padding: '0.375rem 0.625rem', borderRadius: 'var(--radius-md)', background: 'var(--dark-800)', border: '1px solid var(--border-subtle)', transition: 'background 0.2s, border-color 0.2s' }}
+                    title="Mis Medidas"
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'var(--dark-700)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--dark-800)' }}>
+                    <FiActivity size={15} color="var(--primary-400)" />
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Mis Medidas</span>
                 </Link>
 
                 <a href="#mis-datos" onClick={onEditClick}

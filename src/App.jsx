@@ -30,6 +30,7 @@ const AdminDiets = lazy(() => import('./pages/admin/Diets'))
 const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'))
 const ClientDiets = lazy(() => import('./pages/client/Diets'))
 const ClientRoutines = lazy(() => import('./pages/client/Routines'))
+const ClientMeasurements = lazy(() => import('./pages/client/Measurements'))
 
 export default function App() {
     const { loading } = useAuth()
@@ -105,6 +106,16 @@ export default function App() {
                     <ProtectedRoute allowedRoles={['client']}>
                         <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
                             <ClientRoutines />
+                        </Suspense>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/portal/measurements"
+                element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
+                            <ClientMeasurements />
                         </Suspense>
                     </ProtectedRoute>
                 }

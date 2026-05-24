@@ -1,9 +1,3 @@
-/**
- * classHelpers.js
- * Shared utilities for the refactored `classes` table schema.
- * Old column: schedule (text)
- * New columns: days_of_week (text[]), start_time (time), end_time (time)
- */
 
 const DAY_LABELS = {
     monday: 'Lun',
@@ -27,17 +21,13 @@ const DAY_FULL = {
     sunday: 'Domingo',
 }
 
-/**
- * Formats a time string "HH:MM:SS" → "HH:MM"
- */
+
 export function fmtTime(t) {
     if (!t) return ''
     return t.slice(0, 5) // "09:00:00" → "09:00"
 }
 
-/**
- * Sorts days_of_week in calendar order.
- */
+
 export function sortDays(days = []) {
     return [...days].sort((a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b))
 }

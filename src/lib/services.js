@@ -43,6 +43,7 @@ export async function getUserProfile(userId) {
     if (clientData) {
         return {
             id: clientData.id,
+            authId: userId,
             name: clientData.name,
             email: clientData.email,
             phone: clientData.phone,
@@ -651,11 +652,11 @@ export async function getClientFullDetail(clientId) {
         routines: allRoutines,
         classes: (classesRes.data || []).map(e => ({
             ...e,
-            class_name:   e.class?.name        || '',
+            class_name: e.class?.name || '',
             days_of_week: e.class?.days_of_week || [],
-            start_time:   e.class?.start_time   || '',
-            end_time:     e.class?.end_time     || '',
-            instructor:   e.class?.instructor   || '',
+            start_time: e.class?.start_time || '',
+            end_time: e.class?.end_time || '',
+            instructor: e.class?.instructor || '',
             location_name: e.class?.location?.name || '',
         })),
         attendances: (attendancesRes.data || []).map(a => ({
@@ -697,9 +698,16 @@ export async function getClientMeasurements(clientId) {
 }
 
 export async function createMeasurement(measurementData) {
+    // Eliminar claves con valor null o undefined para no pisar defaults de la DB
+    // y evitar errores de FK en campos opcionales como recorded_by
+    const cleanData = Object.fromEntries(
+        Object.entries(measurementData).filter(([, v]) => v !== null && v !== undefined)
+    )
+    // recorded_by debe omitirse si es null (es FK opcional hacia staff)
+    // client_id es requerido
     const { data, error } = await supabase
         .from('body_measurements')
-        .insert(measurementData)
+        .insert(cleanData)
         .select()
         .single()
     if (error) throw error
