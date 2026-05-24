@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { FiPlus, FiSearch } from 'react-icons/fi'
 import { getPayments, getClients, getMembershipTypes, getClasses, createPayment, createClientMembership } from '../../lib/services'
+import { generarVoucherPDF } from '../../lib/pdfHelpers'
 
 import PaymentsStats from '../../components/Payments/PaymentsStats'
 import PaymentsTable from '../../components/Payments/PaymentsTable'
@@ -58,6 +59,18 @@ export default function Payments() {
                     status: 'active'
                 })
             }
+
+            // Obtener nombre del cliente para el voucher
+            const cliente = allClients.find(c => c.id === form.client_id)
+            generarVoucherPDF({
+                client_name: cliente?.name || 'Cliente',
+                concept:     conceptText,
+                method:      form.method,
+                amount:      Number(form.amount),
+                date:        form.date,
+                next_due:    form.next_due || null,
+                status:      'paid'
+            })
 
             await loadData()
             setShowModal(false)
