@@ -8,6 +8,7 @@ import ProfileHeader from '../../components/ClientDashboard/ProfileHeader'
 import ClientCalendar from '../../components/ClientDashboard/ClientCalendar'
 import InfoCards from '../../components/ClientDashboard/InfoCards'
 import ClassesEnrollment from '../../components/ClientDashboard/ClassesEnrollment'
+import FloatingChat from '../../components/ClientDashboard/FloatingChat'
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
@@ -192,6 +193,9 @@ export default function ClientDashboard() {
                     saving={saving} saveProfile={saveProfile}
                 />
             </div>
+
+            {/* ── AI Floating Chat ── */}
+            <FloatingChat />
         </div>
     )
 }
