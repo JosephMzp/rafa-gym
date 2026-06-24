@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicLayout from './layouts/PublicLayout'
 import AdminLayout from './layouts/AdminLayout'
+import ClientLayout from './layouts/ClientLayout'
 
 // Public pages
 import Home from './pages/public/Home'
@@ -26,8 +27,10 @@ const Profile = lazy(() => import('./pages/admin/Profile'))
 const Measurements = lazy(() => import('./pages/admin/Measurements'))
 const AdminDiets = lazy(() => import('./pages/admin/Diets'))
 
-// Client pages
-const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'))
+// Client pages (nuevas micro-experiencias)
+const ClientHome = lazy(() => import('./pages/client/ClientHome'))
+const ClientClasses = lazy(() => import('./pages/client/ClientClasses'))
+const ClientProfile = lazy(() => import('./pages/client/ClientProfile'))
 const ClientDiets = lazy(() => import('./pages/client/Diets'))
 const ClientRoutines = lazy(() => import('./pages/client/Routines'))
 const ClientMeasurements = lazy(() => import('./pages/client/Measurements'))
@@ -79,47 +82,27 @@ export default function App() {
                 <Route path="profile" element={<Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem' }}><div className="spinner spinner-lg"></div></div>}><Profile /></Suspense>} />
             </Route>
 
-            {/* Client portal route */}
+            {/* Client portal routes – anidadas bajo ClientLayout */}
             <Route
-                path="/portal/dashboard"
+                path="/portal"
                 element={
                     <ProtectedRoute allowedRoles={['client']}>
-                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
-                            <ClientDashboard />
-                        </Suspense>
+                        <ClientLayout />
                     </ProtectedRoute>
                 }
-            />
-            <Route
-                path="/portal/diets"
-                element={
-                    <ProtectedRoute allowedRoles={['client']}>
-                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><div className="spinner spinner-lg"></div></div>}>
-                            <ClientDiets />
-                        </Suspense>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/portal/routines"
-                element={
-                    <ProtectedRoute allowedRoles={['client']}>
-                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
-                            <ClientRoutines />
-                        </Suspense>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/portal/measurements"
-                element={
-                    <ProtectedRoute allowedRoles={['client']}>
-                        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--dark-900)' }}><div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }}></div></div>}>
-                            <ClientMeasurements />
-                        </Suspense>
-                    </ProtectedRoute>
-                }
-            />
+            >
+                {/* Redirige la raíz /portal y la ruta legacy /portal/dashboard a /portal/home */}
+                <Route index element={<Navigate to="home" replace />} />
+                <Route path="dashboard" element={<Navigate to="/portal/home" replace />} />
+
+                <Route path="home"        element={<ClientHome />} />
+                <Route path="classes"     element={<ClientClasses />} />
+                <Route path="profile"     element={<ClientProfile />} />
+                <Route path="diets"       element={<ClientDiets />} />
+                <Route path="routines"    element={<ClientRoutines />} />
+                <Route path="measurements" element={<ClientMeasurements />} />
+            </Route>
+
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

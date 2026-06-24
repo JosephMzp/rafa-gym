@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { FiPlus, FiActivity, FiTrendingDown, FiSliders, FiPercent } from 'react-icons/fi'
 import { useAuth } from '../../context/AuthContext'
 import { getClientMeasurements, createMeasurement } from '../../lib/services'
-import ClientNavbar from '../../components/ClientDashboard/ClientNavbar'
 import ClientMeasurementChart from '../../components/ClientMeasurements/ClientMeasurementChart'
 import ClientMeasurementsTable from '../../components/ClientMeasurements/ClientMeasurementsTable'
 import ClientMeasurementFormModal from '../../components/ClientMeasurements/ClientMeasurementFormModal'
@@ -38,20 +37,10 @@ function StatCard({ icon: Icon, label, value, unit, color, delta }) {
 }
 
 export default function ClientMeasurements() {
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
     const [measurements, setMeasurements] = useState([])
     const [loading, setLoading] = useState(true)
     const [showModal, setShowModal] = useState(false)
-    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
-
-    const toggleTheme = () => {
-        setTheme(prev => {
-            const next = prev === 'dark' ? 'light' : 'dark'
-            localStorage.setItem('theme', next)
-            document.documentElement.setAttribute('data-theme', next)
-            return next
-        })
-    }
 
     const loadMeasurements = useCallback(async () => {
         if (!user?.id) return
@@ -144,20 +133,14 @@ export default function ClientMeasurements() {
 
     if (loading) {
         return (
-            <>
-                <ClientNavbar user={user} theme={theme} toggleTheme={toggleTheme} handleLogout={logout} onEditClick={() => { }} />
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 64px)' }}>
-                    <div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }} />
-                </div>
-            </>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 64px)' }}>
+                <div className="spinner spinner-lg" style={{ color: 'var(--primary-500)' }} />
+            </div>
         )
     }
 
     return (
-        <>
-            <ClientNavbar user={user} theme={theme} toggleTheme={toggleTheme} handleLogout={logout} onEditClick={() => { }} />
-
-            <main style={{ maxWidth: 1100, margin: '0 auto', padding: 'var(--space-xl) var(--space-lg)' }}>
+        <main style={{ maxWidth: 1100, margin: '0 auto', padding: 'var(--space-xl) var(--space-lg)' }}>
 
                 {/* Page Header */}
                 <div className="page-header" style={{ marginBottom: 'var(--space-xl)' }}>
@@ -236,8 +219,6 @@ export default function ClientMeasurements() {
                 {/* Tabla de historial */}
                 <ClientMeasurementsTable measurements={measurements} />
 
-            </main>
-
             {/* Modal de nueva medida */}
             {showModal && (
                 <ClientMeasurementFormModal
@@ -245,6 +226,6 @@ export default function ClientMeasurements() {
                     onSave={handleSave}
                 />
             )}
-        </>
+        </main>
     )
 }

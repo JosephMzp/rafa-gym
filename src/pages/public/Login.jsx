@@ -84,16 +84,16 @@ export default function Login() {
                         <button className="login-demo-btn" onClick={() => { setEmail('admin@rafagym.com'); setPassword('admin123') }}>
                             👨‍💼 Admin
                         </button>
-                        {/*
+
                         <button className="login-demo-btn" onClick={() => { setEmail('recepcion@rafagym.com'); setPassword('recepcion123') }}>
                             🧑‍💻 Recepción
                         </button>
                         <button className="login-demo-btn" onClick={() => { setEmail('entrenador@rafagym.com'); setPassword('entrenador123') }}>
                             🏋️ Entrenador
                         </button>
-                        <button className="login-demo-btn" onClick={() => { setEmail('carlos@email.com'); setPassword('carlos123') }}>
+                        <button className="login-demo-btn" onClick={() => { setEmail('angel@gmail.com'); setPassword('76314718') }}>
                             👤 Cliente
-                        </button>*/}
+                        </button>
                     </div>
                 </div>
             </div>
